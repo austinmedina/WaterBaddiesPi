@@ -1,4 +1,5 @@
 import cv2
+from datetime import datetime
 
 # Initialize the camera
 cap = cv2.VideoCapture(0)  # 0 usually refers to the first USB camera
@@ -7,7 +8,7 @@ cap = cv2.VideoCapture(0)  # 0 usually refers to the first USB camera
 if not cap.isOpened():
     print("Error opening video stream or file")
 
-while True:
+for i in range(5):
     # Capture frame-by-frame
     ret, frame = cap.read()
 
@@ -18,6 +19,9 @@ while True:
 
     # Display the resulting frame
     cv2.imshow('frame', frame)
+    
+    #save the image
+    cv2.imwrite(f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png', frame)
 
     # Press 'q' to exit
     if cv2.waitKey(1) == ord('q'):
