@@ -7,7 +7,7 @@ import dbus.exceptions
 import dbus.mainloop.glib
 import dbus.service
 
-from ble import (
+from bleTools import (
     Advertisement,
     Characteristic,
     Service,
@@ -52,6 +52,43 @@ GATT_MANAGER_IFACE = "org.bluez.GattManager1"
 LE_ADVERTISEMENT_IFACE = "org.bluez.LEAdvertisement1"
 LE_ADVERTISING_MANAGER_IFACE = "org.bluez.LEAdvertisingManager1"
 
+
+class InvalidArgsException(dbus.exceptions.DBusException):
+    _dbus_error_name = "org.freedesktop.DBus.Error.InvalidArgs"
+
+
+class NotSupportedException(dbus.exceptions.DBusException):
+    _dbus_error_name = "org.bluez.Error.NotSupported"
+
+
+class NotPermittedException(dbus.exceptions.DBusException):
+    _dbus_error_name = "org.bluez.Error.NotPermitted"
+
+
+class InvalidValueLengthException(dbus.exceptions.DBusException):
+    _dbus_error_name = "org.bluez.Error.InvalidValueLength"
+
+
+class FailedException(dbus.exceptions.DBusException):
+    _dbus_error_name = "org.bluez.Error.Failed"
+
+
+def register_app_cb():
+    logger.info("GATT application registered")
+
+
+def register_app_error_cb(error):
+    logger.critical("Failed to register application: " + str(error))
+    mainloop.quit()
+    
+def register_ad_cb():
+    logger.info("Advertisement registered")
+
+
+def register_ad_error_cb(error):
+    logger.critical("Failed to register advertisement: " + str(error))
+    mainloop.quit()
+
 class CharacteristicUserDescriptionDescriptor(Descriptor):
     """
     Writable CUD descriptor.
@@ -77,61 +114,61 @@ class CharacteristicUserDescriptionDescriptor(Descriptor):
         
 class PlasticConcetrationCharacteristic(Characteristic):
     uuid = "4116f8d2-9f66-4f58-a53d-fc7440e7c14e"
-    descrition = b"Get the average concentration of microplastics in the water sample in parts per microliter"
+    description = b"Get the average concentration of microplastics in the water sample in parts per microliter"
     
     def __init__(self, bus, index, service):
-        Characteristic.__init_(
+        Characteristic.__init__(
             self, bus, index, self.uuid, ["encrypt-read"], service
         )
         
-        self.value = bytearray(84, "utf8")
-        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus 1, self))
+        self.value = bytearray(84)
+        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus, 1, self))
         
     def readValue(self):
         try:
-            self.value = bytearray(84, "utf8")
+            self.value = bytearray(84)
         except Exception as e:
-            self.value = bytearray(-1, encoding="utf8")
+            self.value = bytearray(-1)
         
         return self.value
    
 class MetalConcetrationCharacteristic(Characteristic):
     uuid = "4116f8d2-9f66-4f58-a53d-fc7440e7c14f"
-    descrition = b"Get the average concentration of metals in the water sample in parts per microliter"
+    description = b"Get the average concentration of metals in the water sample in parts per microliter"
     
     def __init__(self, bus, index, service):
-        Characteristic.__init_(
+        Characteristic.__init__(
             self, bus, index, self.uuid, ["encrypt-read"], service
         )
         
-        self.value = bytearray(84, "utf8")
-        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus 1, self))
+        self.value = bytearray(84)
+        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus, 1, self))
         
     def readValue(self):
         try:
-            self.value = bytearray(84, "utf8")
+            self.value = bytearray(84)
         except Exception as e:
-            self.value = bytearray(-1, encoding="utf8")
+            self.value = bytearray(-1)
         
         return self.value
         
 class InorganicConcetrationCharacteristic(Characteristic):
     uuid = "4116f8d2-9f66-4f58-a53d-fc7440e7c14d"
-    descrition = b"Get the average concentration of inorganics in the water sample in parts per microliter"
+    description = b"Get the average concentration of inorganics in the water sample in parts per microliter"
     
     def __init__(self, bus, index, service):
-        Characteristic.__init_(
+        Characteristic.__init__(
             self, bus, index, self.uuid, ["encrypt-read"], service
         )
         
-        self.value = bytearray(84, "utf8")
-        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus 1, self))
+        self.value = bytearray(84)
+        self.add_descriptor(CharacteristicUserDescriptionDescriptor(bus, 1, self))
         
     def readValue(self):
         try:
-            self.value = bytearray(84, "utf8")
+            self.value = bytearray(84)
         except Exception as e:
-            self.value = bytearray(-1, encoding="utf8")
+            self.value = bytearray(-1)
         
         return self.value
         
@@ -155,7 +192,7 @@ class BaddiesS1Service(Service):
     DETECTION_SVC_UUID = "12634d89-d598-4874-8e86-7d042ee07ba7"
 
     def __init__(self, bus, index):
-        Service.__init__(self, bus, index, self.ESPRESSO_SVC_UUID, True)
+        Service.__init__(self, bus, index, self.DETECTION_SVC_UUID, True)
         self.add_characteristic(PlasticConcetrationCharacteristic(bus, 0, self))
         self.add_characteristic(MetalConcetrationCharacteristic(bus, 1, self))
         self.add_characteristic(InorganicConcetrationCharacteristic(bus, 2, self))

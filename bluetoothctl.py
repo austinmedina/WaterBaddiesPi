@@ -1,3 +1,5 @@
+import subprocess
+
 def run_bluetoothctl(commands):
     """
     Run a series of commands in bluetoothctl.
@@ -27,10 +29,20 @@ def run_bluetoothctl(commands):
 if __name__ == "__main__":
     # Example usage
     commands_to_run = [
+        "help",
         "power on",
-        "agent on",
-        "default-agent",
-        "scan on",
+		"menu advertise", 
+		"manufacturer 0xffff 0x12 0x34",
+        "name BaddiesDetectionSystem",
+        "back",
+        "advertise on",
+        "discoverable on",
+        "menu gatt",
+        "register-service e2d36f99-8909-4136-9a49-d825508b297b",
+        "yes",
+        "register-characteristic 0x1234 read",
+        "0",
+        "register-application",
         # Add more commands as needed
     ]
     result = run_bluetoothctl(commands_to_run)
