@@ -1,6 +1,6 @@
 import subprocess
 
-def initializeBluetooth(commands):
+def useBluetoothCtl(commands):
 	"""
 	Run a series of commands in bluetoothctl.
 	:param commands: List of commands to send to bluetoothctl
@@ -39,18 +39,21 @@ if __name__ == "__main__":
 		"help",
 		"power on",
 		"menu advertise", 
-		"manufacturer 0xffff 0x12 0x34",
-		"name BaddiesDetectionSystem",
+		"manufacturer 0x1000",
+		"name on",
+		'name "BaddiesDetectionSystem"',
+		"back",
+		"system-alias BaddiesDetectionSystem",
+		"menu gatt",
+		"register-service 0x1100",
+		"yes",
+		"register-characteristic 0x1110 Flags=read,notify",
+		"62 61 64 64 69 65 73",
+		"register-application",
 		"back",
 		"advertise on",
 		"discoverable on",
-		"menu gatt",
-		"register-service e2d36f99-8909-4136-9a49-d825508b297b",
-		"yes",
-		"register-characteristic 0x1234 read",
-		"0",
-		"register-application",
 		# Add more commands as needed
 	]
-	result = initializeBluetooth(commands_to_run)
+	result = useBluetoothCtl(commands_to_run)
 	print(result)
