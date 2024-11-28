@@ -157,7 +157,7 @@ class MetalCharacteristic(Characteristic):
         return value
 
 class MetalDescriptor(Descriptor):
-    METAL_DESCRIPTOR_UUID = "2902"
+    METAL_DESCRIPTOR_UUID = "2904"
     METAL_DESCRIPTOR_VALUE = "Metal Concentration"
 
     def __init__(self, characteristic):
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     # Run the main loop
     loop = GLib.MainLoop()
     try:
-        app.run()  # This should tie into your app logic
+        app.run()
         loop.run()
     except KeyboardInterrupt:
         app.quit()
