@@ -67,7 +67,7 @@ class PlasticCharacteristic(Characteristic):
 
         return value
 
-    def set_temperature_callback(self):
+    def set_plastic_callback(self):
         if self.notifying:
             value = self.get_concentration()
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
@@ -82,7 +82,7 @@ class PlasticCharacteristic(Characteristic):
 
         value = self.get_concentration()
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        self.add_timeout(NOTIFY_TIMEOUT, self.set_temperature_callback)
+        self.add_timeout(NOTIFY_TIMEOUT, self.set_plastic_callback)
 
     def StopNotify(self):
         self.notifying = False
@@ -131,7 +131,7 @@ class MetalCharacteristic(Characteristic):
 
         return value
 
-    def set_temperature_callback(self):
+    def set_metal_callback(self):
         if self.notifying:
             value = self.get_concentration()
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
@@ -146,7 +146,7 @@ class MetalCharacteristic(Characteristic):
 
         value = self.get_concentration()
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        self.add_timeout(NOTIFY_TIMEOUT, self.set_temperature_callback)
+        self.add_timeout(NOTIFY_TIMEOUT, self.set_metal_callback)
 
     def StopNotify(self):
         self.notifying = False
@@ -195,7 +195,7 @@ class InorganicsCharacteristic(Characteristic):
 
         return value
 
-    def set_temperature_callback(self):
+    def set_inorganics_callback(self):
         if self.notifying:
             value = self.get_concentration()
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
@@ -210,7 +210,7 @@ class InorganicsCharacteristic(Characteristic):
 
         value = self.get_concentration()
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        self.add_timeout(NOTIFY_TIMEOUT, self.set_temperature_callback)
+        self.add_timeout(NOTIFY_TIMEOUT, self.set_inorganics_callback)
 
     def StopNotify(self):
         self.notifying = False
@@ -240,22 +240,22 @@ class InorganicsDescriptor(Descriptor):
         return value
 
 if __name__ == "__main__":
-    # Initialize the D-Bus main loop
+    #Initialize the D-Bus main loop
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
-    # Get the system bus
+    #Get the system bus
     bus = dbus.SystemBus()
 
-    # Reset services and characteristics
+    #Reset services and characteristics
     BleTools.reset_services_and_characteristics(bus)
     BleTools.reset_adapter(bus)
 
-    # Create application
+    #Create bluetooth application
     app = Application()
     app.add_service(BaddiesDetectionService(0))
     app.register()
 
-    # Create and register advertisement
+    #Create and register advertisement for the application
     adv = BaddiesAdvertisement(0)
     adv.register()
 
