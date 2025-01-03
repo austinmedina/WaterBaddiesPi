@@ -93,9 +93,7 @@ class Application(dbus.service.Object):
                 reply_handler=self.register_app_callback,
                 error_handler=self.register_app_error_callback)
     
-    def unregister_gatt_service(bus, service):
-    """Unregisters a GATT service."""
-
+    def unregister(self):
         adapter = BleTools.find_adapter(self.bus)
 
         service_manager = dbus.Interface(
@@ -109,6 +107,7 @@ class Application(dbus.service.Object):
         self.mainloop.run()
 
     def quit(self):
+        self.unregister()
         print("\nGATT application terminated")
         self.mainloop.quit()
 

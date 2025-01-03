@@ -72,7 +72,7 @@ class Advertisement(dbus.service.Object):
         if self.local_name is not None:
             properties["LocalName"] = dbus.String(self.local_name)
         
-        properties["Discoverable""] = dbus.Boolean(True)
+        properties["Discoverable"] = dbus.Boolean(True)
         
         properties["DiscoverableTimeout"] = dbus.dbus.UInt16(0)
 
@@ -143,7 +143,7 @@ class Advertisement(dbus.service.Object):
                                      reply_handler=self.register_ad_callback,
                                      error_handler=self.register_ad_error_callback)
                                      
-    def unregister_advertisement(bus, adapter_path, advertisement):
+    def unregister(self):
         """Unregisters a Bluetooth LE advertisement."""
         bus = BleTools.get_bus()
         adapter = BleTools.find_adapter(bus)

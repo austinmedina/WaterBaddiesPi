@@ -61,7 +61,7 @@ class PlasticCharacteristic(Characteristic):
     def get_concentration(self):
         value = []
 
-        strtemp = "95 parts/ml"
+        strtemp = "95"
         for c in strtemp:
             value.append(dbus.Byte(c.encode()))
 
@@ -125,7 +125,7 @@ class MetalCharacteristic(Characteristic):
     def get_concentration(self):
         value = []
 
-        strtemp = "100 parts/ml"
+        strtemp = "100"
         for c in strtemp:
             value.append(dbus.Byte(c.encode()))
 
@@ -189,7 +189,7 @@ class InorganicsCharacteristic(Characteristic):
     def get_concentration(self):
         value = []
 
-        strtemp = "105 parts/ml"
+        strtemp = "105"
         for c in strtemp:
             value.append(dbus.Byte(c.encode()))
 
@@ -240,15 +240,15 @@ class InorganicsDescriptor(Descriptor):
         return value
 
 if __name__ == "__main__":
+    
     #Initialize the D-Bus main loop
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
     #Get the system bus
     bus = dbus.SystemBus()
-
-    #Reset services and characteristics
-    BleTools.reset_services_and_characteristics(bus)
-    BleTools.reset_adapter(bus)
+    
+    BleTools.power_adapter(bus)
+    BleTools.setDiscoverable(bus)
 
     #Create bluetooth application
     app = Application()
@@ -258,12 +258,8 @@ if __name__ == "__main__":
     #Create and register advertisement for the application
     adv = BaddiesAdvertisement(0)
     adv.register()
-
-    # Run the main loop
-    loop = GLib.MainLoop()
     try:
         app.run()
-        loop.run()
     except KeyboardInterrupt:
+        adv.unregister()
         app.quit()
-        loop.quit()
