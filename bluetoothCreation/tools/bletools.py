@@ -64,48 +64,8 @@ class BleTools(object):
                 "org.freedesktop.DBus.Properties")
         adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
 
-    @classmethod
-    def reset_services_and_characteristics(cls, bus):
-        objects = cls.get_managed_objects(bus)
-        for path, interfaces in objects.items():
-            if GATT_MANAGER_IFACE in interfaces:
-                try:
-                    # Unregister all GATT services
-                    gatt_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, path),
-                                                  GATT_MANAGER_IFACE)
-                    gatt_manager.UnregisterApplication(dbus.ObjectPath(path))
-                    print(f"Unregistered GATT service at {path}")
-                except dbus.exceptions.DBusException as e:
-                    print(f"Failed to unregister GATT service at {path}: {e}")
-
-            if LE_ADVERTISING_MANAGER_IFACE in interfaces:
-                try:
-                    # Stop advertising
-                    adv_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, path),
-                                                 LE_ADVERTISING_MANAGER_IFACE)
-                    adv_manager.UnregisterAdvertisement(dbus.ObjectPath(path))
-                    print(f"Unregistered advertisement at {path}")
-                except dbus.exceptions.DBusException as e:
-                    print(f"Failed to unregister advertisement at {path}: {e}")
-
-    @classmethod
-    def reset_adapter(cls, bus):
-        adapter = cls.find_adapter(bus)
-        if adapter:
-            adapter_props = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter),
-                                           "org.freedesktop.DBus.Properties")
-            # Reset adapter properties
-            adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(0))
-            adapter_props.Set(ADAPTER_IFACE, "Powered", dbus.Boolean(0))
-            adapter_props.Set(ADAPTER_IFACE, "Powered", dbus.Boolean(1))
-            print(f"Adapter {adapter} reset successfully.")
-        else:
-            print("No adapter found to reset.")
-
 if __name__ == "__main__":
     try:
         bus = BleTools.get_bus()
-        BleTools.reset_services_and_characteristics(bus)
-        BleTools.reset_adapter(bus)
     except dbus.exceptions.DBusException as e:
         print(f"Error communicating with DBus: {e}")

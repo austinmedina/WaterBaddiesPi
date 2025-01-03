@@ -71,6 +71,10 @@ class Advertisement(dbus.service.Object):
 
         if self.local_name is not None:
             properties["LocalName"] = dbus.String(self.local_name)
+        
+        properties["Discoverable""] = dbus.Boolean(True)
+        
+        properties["DiscoverableTimeout"] = dbus.dbus.UInt16(0)
 
         return {LE_ADVERTISEMENT_IFACE: properties}
 
@@ -122,6 +126,12 @@ class Advertisement(dbus.service.Object):
 
     def register_ad_error_callback(self):
         print("Failed to register GATT advertisement")
+        
+    def unregister_ad_callback(self):
+        print("GATT advertisement registered")
+
+    def unregister_ad_error_callback(self):
+        print("Failed to register GATT advertisement")
 
     def register(self):
         bus = BleTools.get_bus()
@@ -132,3 +142,15 @@ class Advertisement(dbus.service.Object):
         ad_manager.RegisterAdvertisement(self.get_path(), {},
                                      reply_handler=self.register_ad_callback,
                                      error_handler=self.register_ad_error_callback)
+                                     
+    def unregister_advertisement(bus, adapter_path, advertisement):
+        """Unregisters a Bluetooth LE advertisement."""
+        bus = BleTools.get_bus()
+        adapter = BleTools.find_adapter(bus)
+        ad_manager = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter),
+                                    LE_ADVERTISING_MANAGER_IFACE)
+        ad_manager.UnregisterAdvertisement(self.get_path(),
+                                 reply_handler=self.unregister_ad_callback,
+                                 error_handler=self.unregister_ad_error_callback)
+        print("Advertisement unregistered")
+

@@ -92,6 +92,18 @@ class Application(dbus.service.Object):
         service_manager.RegisterApplication(self.get_path(), {},
                 reply_handler=self.register_app_callback,
                 error_handler=self.register_app_error_callback)
+    
+    def unregister_gatt_service(bus, service):
+    """Unregisters a GATT service."""
+
+        adapter = BleTools.find_adapter(self.bus)
+
+        service_manager = dbus.Interface(
+                self.bus.get_object(BLUEZ_SERVICE_NAME, adapter),
+                GATT_MANAGER_IFACE)
+        service_manager.UnregisterApplication(self.get_path(),
+                reply_handler=self.register_app_callback,
+                error_handler=self.register_app_error_callback)
 
     def run(self):
         self.mainloop.run()
