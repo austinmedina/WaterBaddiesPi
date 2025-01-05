@@ -24,6 +24,9 @@ SOFTWARE.
 import dbus
 import dbus.mainloop.glib
 from gi.repository import GLib
+import threading
+import random
+import time
 
 from tools.advertisement import Advertisement
 from tools.service import Application, Service, Characteristic, Descriptor
@@ -43,31 +46,33 @@ class BaddiesDetectionService(Service):
 
     def __init__(self, index):
         Service.__init__(self, index, self.BADDIES_SVC_UUID, True)
-        self.add_characteristic(PlasticCharacteristic(self))
-        self.add_characteristic(MetalCharacteristic(self))
-        self.add_characteristic(InorganicsCharacteristic(self))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-710e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Microplastic Concentration"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-810e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2904", "Metal Concentration"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-910e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2903", "Inorganics Concentration"))
 
-class PlasticCharacteristic(Characteristic):
-    PLASTIC_CHARACTERISTIC_UUID = "00000002-710e-4a5b-8d75-3e5b444bc3cf"
-
-    def __init__(self, service):
+class GenericCharacteristic(Characteristic):
+    def __init__(self, service, UUID, options, desciptorUUID, descriptorValue, concentrationFunction = None):
         self.notifying = False
+        self.uuid = UUID
+        self.options = options
+        self.concentrationFunction = concentrationFunction
 
         Characteristic.__init__(
-                self, self.PLASTIC_CHARACTERISTIC_UUID,
-                ["notify", "read"], service)
-        self.add_descriptor(PlasticDescriptor(self))
+                self, UUID,
+                options, service)
+        self.add_descriptor(GenericDescriptor(self, desciptorUUID, descriptorValue))
+        
+        threading.Thread(target=self.ValueThread, daemon=True).start()
 
     def get_concentration(self):
-        value = []
-
-        strtemp = "95"
-        for c in strtemp:
-            value.append(dbus.Byte(c.encode()))
+        concentration_value = str(random.randint(60, 150))
+        
+        # Convert the concentration value to a byte list
+        value = [dbus.Byte(c.encode()) for c in concentration_value]
 
         return value
 
-    def set_plastic_callback(self):
+    def set_concentration_callback(self):
         if self.notifying:
             value = self.get_concentration()
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
@@ -82,8 +87,12 @@ class PlasticCharacteristic(Characteristic):
 
         value = self.get_concentration()
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        self.add_timeout(NOTIFY_TIMEOUT, self.set_plastic_callback)
+        
+        #This is used to periodically check the concentrationm(I think, at least once)
+        #self.add_timeout(NOTIFY_TIMEOUT, self.set_concentration_callback)
 
+        self.add_timeout(NOTIFY_TIMEOUT, self.StopNotify)
+        
     def StopNotify(self):
         self.notifying = False
 
@@ -91,154 +100,35 @@ class PlasticCharacteristic(Characteristic):
         value = self.get_concentration()
 
         return value
+        
+    def ValueThread(self):
+        while True:
+            # Fetch and update concentration periodically
+            self.StartNotify()
+            # Wait for a period before updating again (e.g., 10 seconds)
+            time.sleep(10)
 
-class PlasticDescriptor(Descriptor):
-    PLASTIC_DESCRIPTOR_UUID = "2901"
-    PLASTIC_DESCRIPTOR_VALUE = "Microplastic Concentration"
+class GenericDescriptor(Descriptor):
 
-    def __init__(self, characteristic):
+    def __init__(self, characteristic, UUID, value):
+        self.uuid = UUID
+        self.value = value
+        
         Descriptor.__init__(
-                self, self.PLASTIC_DESCRIPTOR_UUID,
+                self, self.uuid,
                 ["read"],
                 characteristic)
+        
 
     def ReadValue(self, options):
         value = []
-        desc = self.PLASTIC_DESCRIPTOR_VALUE
+        desc = self.value
 
         for c in desc:
             value.append(dbus.Byte(c.encode()))
 
         return value
     
-class MetalCharacteristic(Characteristic):
-    METAL_CHARACTERISTIC_UUID = "00000002-810e-4a5b-8d75-3e5b444bc3cf"
-
-    def __init__(self, service):
-        self.notifying = False
-
-        Characteristic.__init__(
-                self, self.METAL_CHARACTERISTIC_UUID,
-                ["notify", "read"], service)
-        self.add_descriptor(MetalDescriptor(self))
-
-    def get_concentration(self):
-        value = []
-
-        strtemp = "100"
-        for c in strtemp:
-            value.append(dbus.Byte(c.encode()))
-
-        return value
-
-    def set_metal_callback(self):
-        if self.notifying:
-            value = self.get_concentration()
-            self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-
-        return self.notifying
-
-    def StartNotify(self):
-        if self.notifying:
-            return
-
-        self.notifying = True
-
-        value = self.get_concentration()
-        self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        self.add_timeout(NOTIFY_TIMEOUT, self.set_metal_callback)
-
-    def StopNotify(self):
-        self.notifying = False
-
-    def ReadValue(self, options):
-        value = self.get_concentration()
-
-        return value
-
-class MetalDescriptor(Descriptor):
-    METAL_DESCRIPTOR_UUID = "2904"
-    METAL_DESCRIPTOR_VALUE = "Metal Concentration"
-
-    def __init__(self, characteristic):
-        Descriptor.__init__(
-                self, self.METAL_DESCRIPTOR_UUID,
-                ["read"],
-                characteristic)
-
-    def ReadValue(self, options):
-        value = []
-        desc = self.METAL_DESCRIPTOR_VALUE
-
-        for c in desc:
-            value.append(dbus.Byte(c.encode()))
-
-        return value
-    
-class InorganicsCharacteristic(Characteristic):
-    INORGANICS_CHARACTERISTIC_UUID = "00000002-910e-4a5b-8d75-3e5b444bc3cf"
-
-    def __init__(self, service):
-        self.notifying = False
-
-        Characteristic.__init__(
-                self, self.INORGANICS_CHARACTERISTIC_UUID,
-                ["notify", "read"], service)
-        self.add_descriptor(InorganicsDescriptor(self))
-
-    def get_concentration(self):
-        value = []
-
-        strtemp = "105"
-        for c in strtemp:
-            value.append(dbus.Byte(c.encode()))
-
-        return value
-
-    def set_inorganics_callback(self):
-        if self.notifying:
-            value = self.get_concentration()
-            self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-
-        return self.notifying
-
-    def StartNotify(self):
-        if self.notifying:
-            return
-
-        self.notifying = True
-
-        value = self.get_concentration()
-        self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        self.add_timeout(NOTIFY_TIMEOUT, self.set_inorganics_callback)
-
-    def StopNotify(self):
-        self.notifying = False
-
-    def ReadValue(self, options):
-        value = self.get_concentration()
-
-        return value
-
-class InorganicsDescriptor(Descriptor):
-    INORGANICS_DESCRIPTOR_UUID = "2903"
-    INORGANICS_DESCRIPTOR_VALUE = "Inorganics Concentration"
-
-    def __init__(self, characteristic):
-        Descriptor.__init__(
-                self, self.INORGANICS_DESCRIPTOR_UUID,
-                ["read"],
-                characteristic)
-
-    def ReadValue(self, options):
-        value = []
-        desc = self.INORGANICS_DESCRIPTOR_VALUE
-
-        for c in desc:
-            value.append(dbus.Byte(c.encode()))
-
-        return value
-
 if __name__ == "__main__":
     
     #Initialize the D-Bus main loop
@@ -248,7 +138,7 @@ if __name__ == "__main__":
     bus = dbus.SystemBus()
     
     BleTools.power_adapter(bus)
-    BleTools.setDiscoverable(bus)
+    BleTools.setDiscoverable(bus, 1)
 
     #Create bluetooth application
     app = Application()
@@ -261,5 +151,6 @@ if __name__ == "__main__":
     try:
         app.run()
     except KeyboardInterrupt:
+        BleTools.setDiscoverable(bus, 0)
         adv.unregister()
         app.quit()

@@ -65,12 +65,12 @@ class BleTools(object):
         adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
         
     @classmethod
-    def setDiscoverable(self, bus):
+    def setDiscoverable(self, bus, option):
         adapter = self.find_adapter(bus)
 
         adapter_props = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter),
                 "org.freedesktop.DBus.Properties")
-        adapter_props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(1))
+        adapter_props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(option))
         adapter_props.Set("org.bluez.Adapter1", "DiscoverableTimeout", dbus.UInt32(0))
 
 if __name__ == "__main__":

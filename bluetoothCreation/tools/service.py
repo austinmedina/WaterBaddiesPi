@@ -180,7 +180,10 @@ class Characteristic(dbus.service.Object):
         self.flags = flags
         self.descriptors = []
         self.next_index = 0
+        
         dbus.service.Object.__init__(self, self.bus, self.path)
+        
+        print("Service created")
 
     def get_properties(self):
         return {

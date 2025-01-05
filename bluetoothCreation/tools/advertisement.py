@@ -152,5 +152,5 @@ class Advertisement(dbus.service.Object):
         ad_manager.UnregisterAdvertisement(self.get_path(),
                                  reply_handler=self.unregister_ad_callback,
                                  error_handler=self.unregister_ad_error_callback)
-        print("Advertisement unregistered")
+        print("/nAdvertisement unregistered")
 
