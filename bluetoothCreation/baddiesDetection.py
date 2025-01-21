@@ -46,10 +46,13 @@ class BaddiesDetectionService(Service):
 
     def __init__(self, index):
         Service.__init__(self, index, self.BADDIES_SVC_UUID, True)
-        self.add_characteristic(GenericCharacteristic(self, "00000002-710e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Microplastic Concentration"))
-        self.add_characteristic(GenericCharacteristic(self, "00000002-810e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2904", "Metal Concentration"))
-        self.add_characteristic(GenericCharacteristic(self, "00000002-910e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2903", "Inorganics Concentration"))
-
+        self.add_characteristic(GenericCharacteristic(self, "00000002-110e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Microplastic"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-210e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Lead"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-310e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Cadmium"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-410e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Arsenic"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-510e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Nitrite"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-610e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Nitrate"))
+        
 class GenericCharacteristic(Characteristic):
     def __init__(self, service, UUID, options, desciptorUUID, descriptorValue, concentrationFunction = None):
         self.notifying = False
