@@ -1,27 +1,30 @@
 from bluetoothCreation.baddiesDetection import BaddiesAdvertisement, BaddiesDetectionService
-from bluetoothCreation.tools import BleTools
-from bluetoothCreation.tools.service import Application
+from bluetoothCreation.tools.bletools import BleTools
+from bluetoothCreation.tools.service import Application, GATT_DESC_IFACE
 import dbus
 import dbus.mainloop.glib
+from gi.repository import GLib
 import threading
+from datetime import datetime
+import time
+import random
 
 class System:
 
     def __init__(self):
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        
         self.bluetooth = None
         self.bus = dbus.SystemBus()
         self.app = None
         self.adv = None
-        threading.Thread(target=self.listenForBluetoothRestart).start()
-        threading.Thread(target=self.listenForDetectionStart).start()
+        self.loop = None
+        self.startBluetooth()
+        self.bluetoothRestartThread = threading.Thread(target=self.listenForBluetoothRestart).start()
+        self.detectionStartThread = threading.Thread(target=self.listenForDetectionStart).start()
         
     
     def startBluetooth(self):
-        #Initialize the D-Bus main loop
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-
-        #Get the system bus
-        self.bus = dbus.SystemBus()
 
         BleTools.power_adapter(self.bus)
         BleTools.setDiscoverable(self.bus, 1)
@@ -34,10 +37,15 @@ class System:
         #Create and register advertisement for the application
         self.adv = BaddiesAdvertisement(0)
         self.adv.register()
+        loop_thread = threading.Thread(target=self.run_event_loop)
+        loop_thread.start()
+
+    def run_event_loop(self):
         try:
-            self.app.run()
-        except:
-            print()
+            self.loop = GLib.MainLoop()
+            self.loop.run()
+        except Exception as e:
+            print(f"Error in DBus main loop: {e}")
 
     def restartBluetooth(self):
         BleTools.setDiscoverable(self.bus, 0)
@@ -49,35 +57,88 @@ class System:
         pass
 
     def listenForDetectionStart(self):
-        pass
+        self.startDetection()
 
     def listenForBluetoothRestart(self):
         pass
+    
+    def dispenseSlide(self):
+        return
+    
+    def moveSlideUnderDropper(self):
+        return
+    
+    def dispenseWater(self):
+        return
+    
+    def moveSlideUnderMicroscope(self):
+        return
+    
+    def captureMicroscopeImage(self):
+        return "microimage-" + datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
+    
+    def analyzeImage(self, imagePath):
+        return random.randint(90,110)
+    
+    def ejectSlide(self):
+        return
+    
+    def getCharacteristic(self, charName):
+        chars = self.app.getServices()[0].get_characteristics()
+        for characteristic in chars:
+            descriptors = characteristic.get_descriptors()
+            for desc in descriptors:
+                bites = desc.ReadValue([])
+                byteString = ''.join([chr(byte) for byte in bites])
+                if (byteString == charName):
+                    return characteristic
+                
+        return None
 
     def microplasticDetection(self):
         sum = 0
         for i in range(5):
-            print("Starting microplastic slide" + i+1)
-            dispenseSlide()
-            moveSlideUnderDropper()
-            dispenseWater()
-            moveSlideUnderMicroscope()
-            imagePath = captureMicroscopeImage()
-            quantity = analyzeImage(imagePath)
+            print("Starting microplastic slide" + str(i+1))
+            self.dispenseSlide()
+            self.moveSlideUnderDropper()
+            self.dispenseWater()
+            self.moveSlideUnderMicroscope()
+            imagePath = self.captureMicroscopeImage()
+            quantity = self.analyzeImage(imagePath)
             sum += quantity
-            ejectSlide()
+            self.ejectSlide()
 
-        concentration = sum/5    
-        chars = self.app.get_characteristics()
-        #get the characteristic and startNotify with the new value
+        concentration = sum/5
         
-
+        mpChar = self.getCharacteristic("Microplastic")
+        if (mpChar):
+            mpChar.WriteValue(str(concentration))
+            print("Updated value:"+ str(concentration))
+        else:
+            print("characteristic none")
+        
+                
+    def InorganicsMetalDetection():
+        return
     
     def startDetection(self):
         print("Initiating Water Baddies Detection")
-        threading.Thread(target=self.microplasticDetection).start()
-        threading.Thread(target=self.InorganicsMetalDetection).start()
+        time.sleep(20)
+        microplasticDetectionThread = threading.Thread(target=self.microplasticDetection)
+        microplasticDetectionThread.start()
+        microplasticDetectionThread.join()
+        #threading.Thread(target=self.InorganicsMetalDetection).start()
 
 if __name__ == "__main__":
-    System()
+    wb = System()
+    try:
+        while True:
+            print("Still Running...")
+            time.sleep(10)
+    except KeyboardInterrupt:
+        BleTools.setDiscoverable(wb.bus, 0)
+        wb.adv.unregister()
+        wb.app.quit()
+        
+    
 

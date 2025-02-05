@@ -66,12 +66,21 @@ class BleTools(object):
         
     @classmethod
     def setDiscoverable(self, bus, option):
+        # Find the adapter
         adapter = self.find_adapter(bus)
+        if not adapter:
+            raise Exception("Bluetooth adapter not found")
 
+        # Get the Adapter1 interface
         adapter_props = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, adapter),
                 "org.freedesktop.DBus.Properties")
-        adapter_props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(option))
-        adapter_props.Set("org.bluez.Adapter1", "DiscoverableTimeout", dbus.UInt32(0))
+
+        # Set the 'Discoverable' and 'DiscoverableTimeout' properties on the adapter
+        try:
+            adapter_props.Set("org.bluez.Adapter1", "Discoverable", dbus.Boolean(option))
+            adapter_props.Set("org.bluez.Adapter1", "DiscoverableTimeout", dbus.UInt32(0))
+        except dbus.exceptions.DBusException as e:
+            print(f"Error setting properties: {e}")
 
 if __name__ == "__main__":
     try:

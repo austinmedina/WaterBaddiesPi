@@ -26,7 +26,7 @@ try:
   from gi.repository import GObject
 except ImportError:
     import gobject as GObject
-from tools.bletools import BleTools
+from .bletools import BleTools
 
 BLUEZ_SERVICE_NAME = "org.bluez"
 GATT_MANAGER_IFACE = "org.bluez.GattManager1"
@@ -110,6 +110,9 @@ class Application(dbus.service.Object):
         self.unregister()
         print("\nGATT application terminated")
         self.mainloop.quit()
+        
+    def getServices(self):
+        return self.services
 
 class Service(dbus.service.Object):
     PATH_BASE = "/org/bluez/example/service"

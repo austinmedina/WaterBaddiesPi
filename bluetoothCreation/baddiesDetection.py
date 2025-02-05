@@ -28,9 +28,9 @@ import threading
 import random
 import time
 
-from tools.advertisement import Advertisement
-from tools.service import Application, Service, Characteristic, Descriptor
-from tools.bletools import BleTools
+from .tools.advertisement import Advertisement
+from .tools.service import Application, Service, Characteristic, Descriptor
+from .tools.bletools import BleTools
 
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000
@@ -64,52 +64,29 @@ class GenericCharacteristic(Characteristic):
                 self, UUID,
                 options, service)
         self.add_descriptor(GenericDescriptor(self, desciptorUUID, descriptorValue))
-        
-        threading.Thread(target=self.ValueThread, daemon=True).start()
-
-    def get_concentration(self):
-        concentration_value = str(random.randint(60, 150))
-        
-        # Convert the concentration value to a byte list
-        value = [dbus.Byte(c.encode()) for c in concentration_value]
-
-        return value
-
-    def set_concentration_callback(self):
-        if self.notifying:
-            value = self.get_concentration()
-            self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-
-        return self.notifying
-
+         
     def StartNotify(self):
         if self.notifying:
             return
 
         self.notifying = True
+        value = self.ReadValue([])
 
-        value = self.get_concentration()
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
-        
-        #This is used to periodically check the concentrationm(I think, at least once)
-        #self.add_timeout(NOTIFY_TIMEOUT, self.set_concentration_callback)
 
         self.add_timeout(NOTIFY_TIMEOUT, self.StopNotify)
         
     def StopNotify(self):
         self.notifying = False
-
-    def ReadValue(self, options):
-        value = self.get_concentration()
-
-        return value
         
-    def ValueThread(self):
-        while True:
-            # Fetch and update concentration periodically
-            self.StartNotify()
-            # Wait for a period before updating again (e.g., 10 seconds)
-            time.sleep(10)
+    def ReadValue(self, options):
+        value = [dbus.Byte(c.encode()) for c in self.value]
+ 
+        return value
+            
+    def WriteValue(self, value):
+        self.value = value
+        self.StartNotify()
 
 class GenericDescriptor(Descriptor):
 
