@@ -82,7 +82,7 @@ class GenericCharacteristic(Characteristic):
     def ReadValue(self, options):
         value = [dbus.Byte(c.encode()) for c in self.value]
  
-        return value
+        return value    
             
     def WriteValue(self, value):
         self.value = value
