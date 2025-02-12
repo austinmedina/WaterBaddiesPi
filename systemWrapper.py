@@ -116,15 +116,70 @@ class System:
             print("Updated value:"+ str(concentration))
         else:
             print("characteristic none")
-        
+
+    def capturePiImage():
+        pass
+
+
+    def analyzeColorimetric(self, imagePath, afterImagePath):
+        return {'Lead': 93, 'Cadmium': 96, 'Arsenic': 102, 'Nitrate': 106, 'Nitrite': 116}
+
+    def dispensePaper(self):
+        pass
+    
+    def moveUnderWaterDropper(self):
+        pass
+    
+    def moveUnderChemicalDropper(self):
+        pass
+    
+    def moveUnderCamera(self):
+        pass
                 
-    def InorganicsMetalDetection():
-        mpChar = self.getCharacteristic("Lead")
-        if (mpChar):
-            mpChar.WriteValue(str(concentration))
-            print("Updated value:"+ str(concentration))
+    def InorganicsMetalDetection(self):
+        self.dispensePaper()
+        self.moveUnderWaterDropper()
+        self.moveUnderChemicalDropper()
+        self.moveUnderCamera()
+        imagePath = self.capturePiImage()
+        time.sleep(600)
+        afterImagePath = self.capturePiImage()
+        concentration = self.analyzeColorimetric(imagePath, afterImagePath)
+
+        leadChar = self.getCharacteristic("Lead")
+        if (leadChar):
+            leadChar.WriteValue(str(concentration["Lead"]))
+            print("Updated value:"+ str(concentration["Lead"]))
         else:
-            print("characteristic none")
+            print("Characteristic not found")
+
+        arsenicChar = self.getCharacteristic("Arsenic")
+        if (arsenicChar):
+            arsenicChar.WriteValue(str(concentration["Arsenic"]))
+            print("Updated value:"+ str(concentration["Arsenic"]))
+        else:
+            print("Characteristic not found")
+
+        cadmiumChar = self.getCharacteristic("Cadmium")
+        if (cadmiumChar):
+            cadmiumChar.WriteValue(str(concentration["Cadmium"]))
+            print("Updated value:"+ str(concentration["Cadmium"]))
+        else:
+            print("Characteristic not found")
+
+        nitrateChar = self.getCharacteristic("Nitrate")
+        if (nitrateChar):
+            nitrateChar.WriteValue(str(concentration["Nitrate"]))
+            print("Updated value:"+ str(concentration["Nitrate"]))
+        else:
+            print("Characteristic not found")
+
+        nitriteChar = self.getCharacteristic("Nitrite")
+        if (nitriteChar):
+            nitriteChar.WriteValue(str(concentration["Nitrite"]))
+            print("Updated value:"+ str(concentration["Nitrite"]))
+        else:
+            print("Characteristic not found")
     
     def startDetection(self):
         print("Initiating Water Baddies Detection")
