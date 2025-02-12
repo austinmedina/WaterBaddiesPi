@@ -33,7 +33,7 @@ from .tools.service import Application, Service, Characteristic, Descriptor
 from .tools.bletools import BleTools
 
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
-NOTIFY_TIMEOUT = 5000
+NOTIFY_TIMEOUT = 10000
 
 class BaddiesAdvertisement(Advertisement):
     def __init__(self, index):
@@ -71,8 +71,10 @@ class GenericCharacteristic(Characteristic):
 
         self.notifying = True
         value = self.ReadValue([])
+        print("Value" + str(value))
 
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+        print("Notified")
 
         self.add_timeout(NOTIFY_TIMEOUT, self.StopNotify)
         
@@ -87,6 +89,7 @@ class GenericCharacteristic(Characteristic):
     def WriteValue(self, value):
         self.value = value
         self.StartNotify()
+        print("Written value and notifying")
 
 class GenericDescriptor(Descriptor):
 

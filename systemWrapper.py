@@ -119,15 +119,23 @@ class System:
         
                 
     def InorganicsMetalDetection():
-        return
+        mpChar = self.getCharacteristic("Lead")
+        if (mpChar):
+            mpChar.WriteValue(str(concentration))
+            print("Updated value:"+ str(concentration))
+        else:
+            print("characteristic none")
     
     def startDetection(self):
         print("Initiating Water Baddies Detection")
-        time.sleep(20)
+        time.sleep(10)
         microplasticDetectionThread = threading.Thread(target=self.microplasticDetection)
         microplasticDetectionThread.start()
+        inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection)
+        inorganicMetalThread.start()
         microplasticDetectionThread.join()
-        #threading.Thread(target=self.InorganicsMetalDetection).start()
+        inorganicMetalThread.join()
+        print("Finished detection")
 
 if __name__ == "__main__":
     wb = System()
