@@ -8,6 +8,7 @@ import threading
 from datetime import datetime
 import time
 import random
+import cv2
 
 from picamera2 import PiCamera2
 from libcamera import controls
@@ -64,17 +65,39 @@ class System:
 
     def listenForBluetoothRestart(self):
         pass
-    
-    def dispenseSlide(self):
+
+    def verifySlideLocationDropper(self):
         return
     
-    def moveSlideUnderDropper(self):
+    def verifySlideLocationMicroscope(self):
         return
     
-    def dispenseWater(self):
+    def cancelMicroplastic(self):
+        print("Aborting Microplastic Detection")
+        return
+    
+    def moveUnderPlasticDropper(self):
+        try:
+            print("Fetching microplastic slide and moving slide under dropper")
+
+            self.verifySlideLocationDropper()
+        except:
+            print("Microplastic slide did not move to the correct position. Ejecting slide")
+            self.cancelMicroplastic()
+        
+        return
+    
+    def dispensePlasticWater(self):
         return
     
     def moveSlideUnderMicroscope(self):
+        try:
+            print("Moving microplastic slide under microscope")
+
+            self.verifySlideLocationMicroscope()
+        except:
+            print("Microplastic slide did not move to the correct position. Ejecting slide")
+            self.cancelMicroplastic()
         return
     
     def captureMicroscopeImage(self):
@@ -102,9 +125,8 @@ class System:
         sum = 0
         for i in range(5):
             print("Starting microplastic slide" + str(i+1))
-            self.dispenseSlide()
-            self.moveSlideUnderDropper()
-            self.dispenseWater()
+            self.moveUnderPlasticDropper()
+            self.dispensePlasticWater()
             self.moveSlideUnderMicroscope()
             imagePath = self.captureMicroscopeImage()
             quantity = self.analyzeImage(imagePath)
@@ -121,33 +143,62 @@ class System:
             print("characteristic none")
 
     def capturePiImage():
+        picam = PiCamera2()
+        picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+        path = f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
+        picam.start_and_capture(path)
         pass
-
 
     def analyzeColorimetric(self, imagePath, afterImagePath):
         return {'Lead': 93, 'Cadmium': 96, 'Arsenic': 102, 'Nitrate': 106, 'Nitrite': 116}
 
     def dispensePaper(self):
         pass
+
+    def cancelPaper(self):
+        print("Aborting Paper Detection")
+        return
+
+    def verifyPaperLocationDropper(self):
+        return
+    
+    def verifyPaperLocationMicroscope(self):
+        return
     
     def moveUnderWaterDropper(self):
-        pass
+        try:
+            print("Moving paperfluidic under dropper")
+
+            self.verifyPaperLocationDropper()
+        except:
+            print("Paperfluidic did not move to the correct position. Ejecting!")
+            self.cancelPaper()
+        return
     
-    def moveUnderChemicalDropper(self):
+    def dispenseFluidicWater(self):
         pass
     
     def moveUnderCamera(self):
-        pass
+        try:
+            print("Moving paperfluidic slide under camera")
+
+            self.verifyPaperLocationMicroscope()
+        except:
+            print("Paperfluidic did not move to the correct position. Ejecting!")
+            self.cancelPaper()
+        return
                 
     def InorganicsMetalDetection(self):
-        self.dispensePaper()
         self.moveUnderWaterDropper()
-        self.moveUnderChemicalDropper()
+        self.dispenseFluidicWater()
         self.moveUnderCamera()
         imagePath = self.capturePiImage()
-        time.sleep(600)
-        afterImagePath = self.capturePiImage()
-        concentration = self.analyzeColorimetric(imagePath, afterImagePath)
+        time.sleep(30)
+        leadImagePath = self.capturePiImage() #Just capture lead image
+        leadConcentration = self.analyzeColorimetric(imagePath, leadImagePath)
+        time.sleep(550)
+        finalImagePath = self.capturePiImage()
+        concentration = self.analyzeColorimetric(imagePath, finalImagePath)
 
         leadChar = self.getCharacteristic("Lead")
         if (leadChar):
