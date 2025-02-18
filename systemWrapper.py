@@ -13,6 +13,8 @@ import cv2
 from picamera2 import PiCamera2
 from libcamera import controls
 
+from breakpointSensor import IRSensor
+
 class System:
 
     def __init__(self):
@@ -67,9 +69,20 @@ class System:
         pass
 
     def verifySlideLocationDropper(self):
-        return
+        ir = IRSensor(26)
+        return ir.is_object_detected()
     
     def verifySlideLocationMicroscope(self):
+        try:
+            print("Moving microplastic slide under dropper")
+
+            if (!self.verifySlideLocationDropper()):
+                raise Exception("Microplastic slide did not move under microscope. Ejecting slide")
+
+        except Exception as e:
+            print(f"Caught an error: {e}")
+            self.cancelMicroplastic()
+        
         return
     
     def cancelMicroplastic(self):
@@ -80,9 +93,11 @@ class System:
         try:
             print("Fetching microplastic slide and moving slide under dropper")
 
-            self.verifySlideLocationDropper()
-        except:
-            print("Microplastic slide did not move to the correct position. Ejecting slide")
+            if (!self.verifySlideLocationDropper()):
+                raise Exception("Microplastic slide did not move to the correct position. Ejecting slide")
+
+        except Exception as e:
+            print(f"Caught an error: {e}")
             self.cancelMicroplastic()
         
         return
