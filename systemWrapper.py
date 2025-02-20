@@ -221,22 +221,22 @@ class System:
                 self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper")
                 self.dispensePlasticWater()
                 self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope")
-                try:
-                    imagePath = self.captureMicroscopeImage()
-                    print(f"Microplastic image path: {imagePath}")
-                except Exception as e:
-                    print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
+                # try:
+                #     imagePath = self.captureMicroscopeImage()
+                #     print(f"Microplastic image path: {imagePath}")
+                # except Exception as e:
+                #     print(f"Error during image capture: {e}")
+                #     raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
 
-                try:    
-                    testImagePath = ""
-                    quantity = microplastic_concentration(testImagePath)
-                    #quantity = microplastic_concentration(imagePath)
-                except Exception as e:
-                    print(f"Error during image analysis: {e}")
-                    raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
+                # try:    
+                #     testImagePath = ""
+                #     quantity = microplastic_concentration(testImagePath)
+                #     #quantity = microplastic_concentration(imagePath)
+                # except Exception as e:
+                #     print(f"Error during image analysis: {e}")
+                #     raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
                 
-                sum += quantity
+                # sum += quantity
                 self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
 
             concentration = sum/5
@@ -334,80 +334,80 @@ class System:
             self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper")
             self.dispenseFluidicWater()
             self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the microscope")
-            try:
-                imagePath = self.capturePiImage()
-                print(f"First paperfluidics image: {imagePath}")
-                time.sleep(30)
-                leadImagePath = self.capturePiImage() #Just capture lead image
-                print(f"Lead paperfluidics image: {leadImagePath}")
+            # try:
+            #     imagePath = self.capturePiImage()
+            #     print(f"First paperfluidics image: {imagePath}")
+            #     time.sleep(30)
+            #     leadImagePath = self.capturePiImage() #Just capture lead image
+            #     print(f"Lead paperfluidics image: {leadImagePath}")
 
-                #Just for testing
-                testImagePath = ""
-                testLeadImagePath = ""
-            except Exception as e:
-                    print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+            #     #Just for testing
+            #     testImagePath = ""
+            #     testLeadImagePath = ""
+            # except Exception as e:
+            #         print(f"Error during image capture: {e}")
+            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
-            try:
-                #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
-                leadConcentration = paperfluidic_concentration(testImagePath, testLeadImagePath)['lead']
-            except Exception as e:
-                    print(f"Error during image analysis: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+            # try:
+            #     #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
+            #     leadConcentration = paperfluidic_concentration(testImagePath, testLeadImagePath)['lead']
+            # except Exception as e:
+            #         print(f"Error during image analysis: {e}")
+            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
-            time.sleep(530)
+            # time.sleep(530)
 
-            try:
-                finalImagePath = self.capturePiImage()
-                print(f"Final paperfluidics image: {finalImagePath}")
+            # try:
+            #     finalImagePath = self.capturePiImage()
+            #     print(f"Final paperfluidics image: {finalImagePath}")
                 
-                testFinalImagePath = ""
-            except Exception as e:
-                    print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+            #     testFinalImagePath = ""
+            # except Exception as e:
+            #         print(f"Error during image capture: {e}")
+            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
-            try:
-                #concentration = paperfluidic_concentration(imagePath, finalImagePath)
-                concentration = paperfluidic_concentration(testImagePath, testFinalImagePath)
-                concentration['Lead'] = leadConcentration
-            except Exception as e:
-                    print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+            # try:
+            #     #concentration = paperfluidic_concentration(imagePath, finalImagePath)
+            #     concentration = paperfluidic_concentration(testImagePath, testFinalImagePath)
+            #     concentration['Lead'] = leadConcentration
+            # except Exception as e:
+            #         print(f"Error during image capture: {e}")
+            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
 
-            leadChar = self.getCharacteristic("Lead")
-            if (leadChar):
-                leadChar.WriteValue(str(concentration["Lead"]))
-                print("Updated value:"+ str(concentration["Lead"]))
-            else:
-                print("Lead characteristic not found")
+            # leadChar = self.getCharacteristic("Lead")
+            # if (leadChar):
+            #     leadChar.WriteValue(str(concentration["Lead"]))
+            #     print("Updated value:"+ str(concentration["Lead"]))
+            # else:
+            #     print("Lead characteristic not found")
 
-            arsenicChar = self.getCharacteristic("Mercury")
-            if (arsenicChar):
-                arsenicChar.WriteValue(str(concentration["Mercury"]))
-                print("Updated value:"+ str(concentration["Mercury"]))
-            else:
-                print("Mercury characteristic not found")
+            # arsenicChar = self.getCharacteristic("Mercury")
+            # if (arsenicChar):
+            #     arsenicChar.WriteValue(str(concentration["Mercury"]))
+            #     print("Updated value:"+ str(concentration["Mercury"]))
+            # else:
+            #     print("Mercury characteristic not found")
 
-            cadmiumChar = self.getCharacteristic("Cadmium")
-            if (cadmiumChar):
-                cadmiumChar.WriteValue(str(concentration["Cadmium"]))
-                print("Updated value:"+ str(concentration["Cadmium"]))
-            else:
-                print("Cadmium characteristic not found")
+            # cadmiumChar = self.getCharacteristic("Cadmium")
+            # if (cadmiumChar):
+            #     cadmiumChar.WriteValue(str(concentration["Cadmium"]))
+            #     print("Updated value:"+ str(concentration["Cadmium"]))
+            # else:
+            #     print("Cadmium characteristic not found")
 
-            nitrateChar = self.getCharacteristic("Nitrate")
-            if (nitrateChar):
-                nitrateChar.WriteValue(str(concentration["Nitrate"]))
-                print("Updated value:"+ str(concentration["Nitrate"]))
-            else:
-                print("Nitrate characteristic not found")
+            # nitrateChar = self.getCharacteristic("Nitrate")
+            # if (nitrateChar):
+            #     nitrateChar.WriteValue(str(concentration["Nitrate"]))
+            #     print("Updated value:"+ str(concentration["Nitrate"]))
+            # else:
+            #     print("Nitrate characteristic not found")
 
-            nitriteChar = self.getCharacteristic("Nitrite")
-            if (nitriteChar):
-                nitriteChar.WriteValue(str(concentration["Nitrite"]))
-                print("Updated value:"+ str(concentration["Nitrite"]))
-            else:
-                print("Nitrite characteristic not found")
+            # nitriteChar = self.getCharacteristic("Nitrite")
+            # if (nitriteChar):
+            #     nitriteChar.WriteValue(str(concentration["Nitrite"]))
+            #     print("Updated value:"+ str(concentration["Nitrite"]))
+            # else:
+            #     print("Nitrite characteristic not found")
 
             self.resetConveyorBelt(firstIR, "Resetting the paperfludics conveyor belt", self.kit.stepper2)
         except Exception as e:
@@ -468,6 +468,9 @@ if __name__ == "__main__":
         BleTools.setDiscoverable(wb.bus, 0)
         wb.adv.unregister()
         wb.app.quit()
+        System.kit.stepper1.release()
+        System.kit.stepper2.release()
+        print("Motors released")
         
     
 
