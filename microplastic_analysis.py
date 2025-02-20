@@ -1,47 +1,47 @@
 import matplotlib.pyplot as plt
 from skimage import io, color, filters, measure, morphology
 
-image = io.imread("Snap_038.jpg")
-image = color.rgb2gray(image)
-threshold = filters.threshold_otsu(image)
 
-cleaned_image = morphology.closing(image >= threshold)
+def microplastic_concentration(image_path):
+    image = io.imread(image_path)
+    image = color.rgb2gray(image)
+    threshold = filters.threshold_otsu(image)
 
+    cleaned_image = morphology.closing(image >= threshold)
 
-# Label connected regions
-labeled_image = measure.label(cleaned_image,background=0)
-regions = measure.regionprops(labeled_image)
+    # Label connected regions
+    labeled_image = measure.label(cleaned_image,background=0)
+    regions = measure.regionprops(labeled_image)
 
-# Count microplastic particles
-num_particles = len(regions)
+    # Count microplastic particles
+    num_particles = len(regions)
 
-# Known field of view (in mm²)
-#field_of_view_area = 1#7.5*4  # Adjust based on microscope calibration
+    # Known field of view (in mm²)
+    # Adjust based on microscope calibration
+    obj_size = 1                        # in mm
+    obj_pixels = 62.9
+    scale_factor = obj_size / obj_pixels
 
-obj_size = 1                     # in mm
-obj_pixels = 62.9
-scale_factor = obj_size / obj_pixels
+    # Known field of view (in mm²)
+    field_of_view_area = (1280*scale_factor) * (720*scale_factor)
+    # field_of_view_area = 15*19
+    depth = 1                           # in mm
+    volume = field_of_view_area * depth / 1000
 
-# Known field of view (in mm²)
-field_of_view_area = (1280*scale_factor) * (720*scale_factor)
-# field_of_view_area = 15*19
-depth = 1        # in mm
-volume = field_of_view_area * depth / 1000
+    concentration = num_particles / volume
 
-print(field_of_view_area)
+    print(f'Approximate concentration: {concentration:.2f} particles/mL')
 
-concentration = num_particles / volume
+    # Display
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
 
-print(f'Approximate concentration: {concentration:.2f} particles/mL')
+    ax[0].imshow(image)
+    ax[0].axis("off")
 
-# Display
-fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    ax[1].imshow(labeled_image)
+    ax[1].axis("off")
 
-ax[0].imshow(image)
-ax[0].axis("off")
+    plt.tight_layout()
+    plt.show()
 
-ax[1].imshow(labeled_image)
-ax[1].axis("off")
-
-plt.tight_layout()
-plt.show()
+    return concentration
