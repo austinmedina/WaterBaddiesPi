@@ -92,8 +92,18 @@ class System:
     def listenForBluetoothRestart(self):
         pass
 
+    def resetPlasticConveyorBelt(self):
+        ir = IRSensor(26)
+        detected = ir.is_object_detected()
+        while (not detected):
+            print("Calibrating microplastic conveyor belt")
+            #Move the motors until the nub is detected?
+            detected = ir.is_object_detected()
+
     def cancelMicroplastic(self):
         print("Aborting Microplastic Detection")
+        #Maybe display it on the monitor
+        self.resetPlasticConveyorBelt()
         return
 
     def verifySlideLocationDropper(self):
@@ -148,11 +158,22 @@ class System:
         return
     
     def captureMicroscopeImage(self):
-        return "microimage-" + datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
-    
-    def ejectSlide(self):
-        return
-    
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("Error opening video stream or file")
+            raise Exception("Couldnt open microscope stream")
+        
+        ret, frame = cap.read()
+
+        if not ret:
+            print("Can't receive frame (stream end?). Exiting ...")
+            raise Exception("Couldnt open microscope picture frame")
+        
+        path = f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
+        cv2.imwrite(path, frame)
+
+        return path
+
     def getCharacteristic(self, charName):
         chars = self.app.getServices()[0].get_characteristics()
         for characteristic in chars:
@@ -167,6 +188,7 @@ class System:
 
     def microplasticDetection(self):
         try:
+            self.resetPlasticConveyorBelt()
             sum = 0
             for i in range(5):
                 print("Starting microplastic slide" + str(i+1))
@@ -175,18 +197,21 @@ class System:
                 self.movePlasticUnderMicroscope()
                 try:
                     imagePath = self.captureMicroscopeImage()
+                    print(f"Microplastic image path: {imagePath}")
                 except Exception as e:
                     print(f"Error during image capture: {e}")
                     raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
 
                 try:    
-                    quantity = analyzeMicroplastics(imagePath)
+                    testImagePath = ""
+                    quantity = analyzeMicroplastics(testImagePath)
+                    #quantity = analyzeMicroplastics(imagePath)
                 except Exception as e:
                     print(f"Error during image analysis: {e}")
                     raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
                 
                 sum += quantity
-                self.ejectSlide()
+                self.resetPlasticConveyorBelt()
 
             concentration = sum/5
             
@@ -212,15 +237,21 @@ class System:
     def capturePiImage():
         picam = PiCamera2()
         picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
-        path = f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
+        path = f'paperfluidicImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
         picam.start_and_capture(path)
         return path
 
-    def dispensePaper(self):
-        pass
+    def resetPaperConveyorBelt(self):
+        ir = IRSensor(26)
+        detected = ir.is_object_detected()
+        while (not detected):
+            print("Calibrating microplastic conveyor belt")
+            #Move the motors until the nub is detected?
+            detected = ir.is_object_detected()
 
     def cancelPaper(self):
         print("Aborting Paper Detection")
+        self.resetPaperConveyorBelt()
         return
 
     def verifyPaperLocationDropper(self):
@@ -276,19 +307,27 @@ class System:
                 
     def InorganicsMetalDetection(self):
         try:
+            self.resetPaperConveyorBelt()
             self.moveUnderWaterDropper()
             self.dispenseFluidicWater()
             self.moveUnderCamera()
             try:
                 imagePath = self.capturePiImage()
+                print(f"First paperfluidics image: {imagePath}")
                 time.sleep(30)
                 leadImagePath = self.capturePiImage() #Just capture lead image
+                print(f"Lead paperfluidics image: {leadImagePath}")
+
+                #Just for testing
+                testImagePath = ""
+                testLeadImagePath = ""
             except Exception as e:
                     print(f"Error during image capture: {e}")
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
             try:
-                leadConcentration = analyzeColorimetric(imagePath, leadImagePath)['lead']
+                #leadConcentration = analyzeColorimetric(imagePath, leadImagePath)['lead']
+                leadConcentration = analyzeColorimetric(testImagePath, testLeadImagePath)['lead']
             except Exception as e:
                     print(f"Error during image analysis: {e}")
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
@@ -297,13 +336,17 @@ class System:
 
             try:
                 finalImagePath = self.capturePiImage()
+                print(f"Final paperfluidics image: {finalImagePath}")
+                
+                testFinalImagePath = ""
             except Exception as e:
                     print(f"Error during image capture: {e}")
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
             try:
-                concentration = analyzeColorimetric(imagePath, finalImagePath)
-                concentration['lead'] = leadConcentration
+                #concentration = analyzeColorimetric(imagePath, finalImagePath)
+                concentration = analyzeColorimetric(testImagePath, testFinalImagePath)
+                concentration['Lead'] = leadConcentration
             except Exception as e:
                     print(f"Error during image capture: {e}")
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
@@ -313,35 +356,35 @@ class System:
                 leadChar.WriteValue(str(concentration["Lead"]))
                 print("Updated value:"+ str(concentration["Lead"]))
             else:
-                print("Characteristic not found")
+                print("Lead characteristic not found")
 
-            arsenicChar = self.getCharacteristic("Arsenic")
+            arsenicChar = self.getCharacteristic("Mercury")
             if (arsenicChar):
-                arsenicChar.WriteValue(str(concentration["Arsenic"]))
-                print("Updated value:"+ str(concentration["Arsenic"]))
+                arsenicChar.WriteValue(str(concentration["Mercury"]))
+                print("Updated value:"+ str(concentration["Mercury"]))
             else:
-                print("Characteristic not found")
+                print("Mercury characteristic not found")
 
             cadmiumChar = self.getCharacteristic("Cadmium")
             if (cadmiumChar):
                 cadmiumChar.WriteValue(str(concentration["Cadmium"]))
                 print("Updated value:"+ str(concentration["Cadmium"]))
             else:
-                print("Characteristic not found")
+                print("Cadmium characteristic not found")
 
             nitrateChar = self.getCharacteristic("Nitrate")
             if (nitrateChar):
                 nitrateChar.WriteValue(str(concentration["Nitrate"]))
                 print("Updated value:"+ str(concentration["Nitrate"]))
             else:
-                print("Characteristic not found")
+                print("Nitrate characteristic not found")
 
             nitriteChar = self.getCharacteristic("Nitrite")
             if (nitriteChar):
                 nitriteChar.WriteValue(str(concentration["Nitrite"]))
                 print("Updated value:"+ str(concentration["Nitrite"]))
             else:
-                print("Characteristic not found")
+                print("Nitrite characteristic not found")
         except Exception as e:
             print(f"Caught exception: {e}")
         except ImageCaptureError as ie:
@@ -354,16 +397,40 @@ class System:
             except Exception as ee:
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
+        
+    def ArsenicDetection(self):
+        try:
+            print("Do some arsenic testing")
+            return
+        except Exception as e:
+            print(f"Caught exception: {e}")
+        except ImageCaptureError as ie:
+            print(f"Caught image capture exception: {ie}")
+        except ImageAnalysisError as ia:
+            print(f"Caught image analysis exception: {ia}")
+        finally:
+            try:
+                self.cancelPaper()
+            except Exception as ee:
+                print(f"Fatal error while canceling arsenic detection, after an error had already occured. FATAL ERROR: {ee}")
+            return
     
     def startDetection(self):
         print("Initiating Water Baddies Detection")
         time.sleep(10)
         microplasticDetectionThread = threading.Thread(target=self.microplasticDetection)
         microplasticDetectionThread.start()
+
         inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection)
         inorganicMetalThread.start()
+
+        arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection)
+        arsenicDetectionThread.start()
+
         microplasticDetectionThread.join()
         inorganicMetalThread.join()
+        arsenicDetectionThread.join()
+
         print("Finished detection")
 
 if __name__ == "__main__":
