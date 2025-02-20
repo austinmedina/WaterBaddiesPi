@@ -14,9 +14,12 @@ from picamera2 import PiCamera2
 from libcamera import controls
 
 from breakpointSensor import IRSensor
+from adafruit_motorkit import MotorKit
+from adafruit_motor import stepper
+from Motor import run_stepper
 
-from paperfluidic_analysis import analyzeColorimetric
-from microscope_analysis import analyzeMicroplastics
+from paperfluidic_analysis import paperfluidic_concentration
+from microscope_analysis import microplastic_concentration
 
 class SlideNotDetectedError(Exception):
     """Exception raised when a cartridge is not detected"""
@@ -39,6 +42,13 @@ class ImageAnalysisError(Exception):
         self.message = message
         super().__init__(self.message)        
 
+class ConveyorGoAroundError(Exception):
+    """Exception raised when the conveyor misses a breakpoint and goes back to the start without performing the test"""
+
+    def __init__(self, message="Conveyor rotated all the way around to start. Aborting test. Ejecting slide"):
+        self.message = message
+        super().__init__(self.message)
+
 class System:
 
     def __init__(self):
@@ -49,6 +59,8 @@ class System:
         self.app = None
         self.adv = None
         self.loop = None
+        self.kit = MotorKit()
+        self.cm_step = 31
         self.startBluetooth()
         self.bluetoothRestartThread = threading.Thread(target=self.listenForBluetoothRestart).start()
         self.detectionStartThread = threading.Thread(target=self.listenForDetectionStart).start()
@@ -92,67 +104,78 @@ class System:
     def listenForBluetoothRestart(self):
         pass
 
-    def resetPlasticConveyorBelt(self):
-        ir = IRSensor(26)
+    def resetConveyorBelt(self, ir, message, motor):
+        print(message)
         detected = ir.is_object_detected()
         while (not detected):
-            print("Calibrating microplastic conveyor belt")
-            #Move the motors until the nub is detected?
+            print("Moving Conveyor Belt")
+            run_stepper(motor, self.cm_step)
             detected = ir.is_object_detected()
 
-    def cancelMicroplastic(self):
-        print("Aborting Microplastic Detection")
-        #Maybe display it on the monitor
-        self.resetPlasticConveyorBelt()
-        return
+    def moveConveyorToSensor(self, targetIR, startIR, message, motor):
+        print(message)
+        detected = targetIR.is_object_detected()
+        while ((not detected)):
+            print("Moving Conveyor Belt")
+            run_stepper(motor, self.cm_step)
+            detected = targetIR.is_object_detected()
+            startDetected = startIR.is_object_detected()
+            if (startDetected):
+                raise ConveyorGoAroundError("Conveyor belt at the start, although its not supposed to be.")
 
-    def verifySlideLocationDropper(self):
-        ir = IRSensor(26)
-        detected = ir.is_object_detected()
-        if (not detected):
-            raise SlideNotDetectedError("Microplastic slide did not move under dropper. Ejecting slide")
+    # def verifySlideLocationDropper(self):
+    #     ir = IRSensor(26)
+    #     detected = ir.is_object_detected()
+    #     if (not detected):
+    #         raise SlideNotDetectedError("Microplastic slide did not move under dropper. Ejecting slide")
         
-        return
+    #     return
     
-    def verifySlideLocationMicroscope(self):
-        ir = IRSensor(26)
-        detected = ir.is_object_detected()
-        if (not detected):
-            raise SlideNotDetectedError("Microplastic slide did not move under microscope. Ejecting slide")
+    # def verifySlideLocationMicroscope(self):
+    #     ir = IRSensor(26)
+    #     detected = ir.is_object_detected()
+    #     if (not detected):
+    #         raise SlideNotDetectedError("Microplastic slide did not move under microscope. Ejecting slide")
         
-        return
+    #     return
     
-    def moveUnderPlasticDropper(self):
-        try:
-            print("Fetching microplastic slide and moving slide under dropper")
+    # def moveUnderPlasticDropper(self):
+    #     try:
+    #         print("Fetching microplastic slide and moving slide under dropper")
 
-            # Move conveyor here
+    #         ir = IRSensor(26)
+    #         detected = ir.is_object_detected()
+    #         while (not detected):
+    #             print("Moving Microplastic Slide")
+    #             #Move the motors until the nub is detected?
+    #             detected = ir.is_object_detected()
 
-            self.verifySlideLocationDropper()
-
-            return
-        except SlideNotDetectedError as se:
-            print("Slide not detected after moving microplastic slide under dropper")
-            raise se
-        except Exception as e:
-            print("Unexpected error while moving microplastic slide under dropper")
-            raise e
+    #         return
+    #     except SlideNotDetectedError as se:
+    #         print("Slide not detected after moving microplastic slide under dropper")
+    #         raise se
+    #     except Exception as e:
+    #         print("Unexpected error while moving microplastic slide under dropper")
+    #         raise e
     
-    def movePlasticUnderMicroscope(self):
-        try:
-            print("Moving microplastic slide under microscope")
+    # def movePlasticUnderMicroscope(self):
+    #     try:
+    #         print("Moving microplastic slide under microscope")
 
-            # Move conveyor here
+    #         ir = IRSensor(26)
+    #         detected = ir.is_object_detected()
+    #         while (not detected):
+    #             print("Calibrating microplastic conveyor belt")
+    #             #Move the motors until the nub is detected?
+    #             detected = ir.is_object_detected()
 
-            self.verifySlideLocationMicroscope()
-
-            return
-        except SlideNotDetectedError as se:
-            print("Slide not detected after moving microplastic slide under microscope")
-            raise se
-        except Exception as e:
-            print("Unexpected error while moving microplastic slide under microscope")
-            raise e
+    #         return
+    #     except SlideNotDetectedError as se:
+    #         print("Slide not detected after moving microplastic slide under microscope")
+    #         raise se
+    #     except Exception as e:
+    #         print("Unexpected error while moving microplastic slide under microscope")
+    #         raise e
     
     def dispensePlasticWater(self):
         return
@@ -188,13 +211,16 @@ class System:
 
     def microplasticDetection(self):
         try:
-            self.resetPlasticConveyorBelt()
+            firstIR = IRSensor(26)
+            dropperIR = IRSensor(26)
+            microscopeIR = IRSensor(26)
+            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
             sum = 0
             for i in range(5):
                 print("Starting microplastic slide" + str(i+1))
-                self.moveUnderPlasticDropper()
+                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper")
                 self.dispensePlasticWater()
-                self.movePlasticUnderMicroscope()
+                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope")
                 try:
                     imagePath = self.captureMicroscopeImage()
                     print(f"Microplastic image path: {imagePath}")
@@ -204,14 +230,14 @@ class System:
 
                 try:    
                     testImagePath = ""
-                    quantity = analyzeMicroplastics(testImagePath)
-                    #quantity = analyzeMicroplastics(imagePath)
+                    quantity = microplastic_concentration(testImagePath)
+                    #quantity = microplastic_concentration(imagePath)
                 except Exception as e:
                     print(f"Error during image analysis: {e}")
                     raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
                 
                 sum += quantity
-                self.resetPlasticConveyorBelt()
+                self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
 
             concentration = sum/5
             
@@ -229,7 +255,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
         finally:
             try:
-                self.cancelMicroplastic()
+                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
             except Exception as ee:
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
@@ -241,76 +267,73 @@ class System:
         picam.start_and_capture(path)
         return path
 
-    def resetPaperConveyorBelt(self):
-        ir = IRSensor(26)
-        detected = ir.is_object_detected()
-        while (not detected):
-            print("Calibrating microplastic conveyor belt")
-            #Move the motors until the nub is detected?
-            detected = ir.is_object_detected()
-
-    def cancelPaper(self):
-        print("Aborting Paper Detection")
-        self.resetPaperConveyorBelt()
-        return
-
-    def verifyPaperLocationDropper(self):
-        ir = IRSensor(26)
-        detected = ir.is_object_detected()
-        if (not detected):
-            raise SlideNotDetectedError("Paperfluidics did not move under dropper. Ejecting slide")
+    # def verifyPaperLocationDropper(self):
+    #     ir = IRSensor(26)
+    #     detected = ir.is_object_detected()
+    #     if (not detected):
+    #         raise SlideNotDetectedError("Paperfluidics did not move under dropper. Ejecting slide")
         
-        return
+    #     return
     
-    def verifyPaperLocationMicroscope(self):
-        ir = IRSensor(26)
-        detected = ir.is_object_detected()
-        if (not detected):
-            raise SlideNotDetectedError("Paperfluidics did not move under microscope. Ejecting slide")
+    # def verifyPaperLocationMicroscope(self):
+    #     ir = IRSensor(26)
+    #     detected = ir.is_object_detected()
+    #     if (not detected):
+    #         raise SlideNotDetectedError("Paperfluidics did not move under microscope. Ejecting slide")
         
-        return
+    #     return
     
-    def moveUnderWaterDropper(self):
-        try:
-            print("Moving paperfluidics under microscope")
+    # def moveUnderWaterDropper(self):
+    #     try:
+    #         print("Moving paperfluidics under microscope")
 
-            # Move conveyor here
+    #         ir = IRSensor(26)
+    #         detected = ir.is_object_detected()
+    #         while (not detected):
+    #             print("Calibrating microplastic conveyor belt")
+    #             #Move the motors until the nub is detected?
+    #             detected = ir.is_object_detected()
 
-            self.verifyPaperLocationDropper()
-
-            return
-        except SlideNotDetectedError as se:
-            print("Slide not detected after moving paperfluidics slide under dropper")
-            raise se
-        except Exception as e:
-            print("Unexpected error while moving paperfluidics slide under dropper")
-            raise e
+    #         return
+    #     except SlideNotDetectedError as se:
+    #         print("Slide not detected after moving paperfluidics slide under dropper")
+    #         raise se
+    #     except Exception as e:
+    #         print("Unexpected error while moving paperfluidics slide under dropper")
+    #         raise e
     
-    def moveUnderCamera(self):
-        try:
-            print("Moving paperfluidics slide under PiCamera")
+    # def moveUnderCamera(self):
+    #     try:
+    #         print("Moving paperfluidics slide under PiCamera")
 
-            # Move conveyor here
+    #         ir = IRSensor(26)
+    #         detected = ir.is_object_detected()
+    #         while (not detected):
+    #             print("Calibrating microplastic conveyor belt")
+    #             #Move the motors until the nub is detected?
+    #             detected = ir.is_object_detected()
 
-            self.verifyPaperLocationMicroscope()
-
-            return
-        except SlideNotDetectedError as se:
-            print("Slide not detected after moving paperfluidics slide under PiCamera")
-            raise se
-        except Exception as e:
-            print("Unexpected error while moving paperfluidics slide under PiCamera")
-            raise e
+    #         return
+    #     except SlideNotDetectedError as se:
+    #         print("Slide not detected after moving paperfluidics slide under PiCamera")
+    #         raise se
+    #     except Exception as e:
+    #         print("Unexpected error while moving paperfluidics slide under PiCamera")
+    #         raise e
         
     def dispenseFluidicWater(self):
         pass
                 
     def InorganicsMetalDetection(self):
         try:
-            self.resetPaperConveyorBelt()
-            self.moveUnderWaterDropper()
+            firstIR = IRSensor(26)
+            dropperIR = IRSensor(26)
+            microscopeIR = IRSensor(26)
+            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper2)
+
+            self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper")
             self.dispenseFluidicWater()
-            self.moveUnderCamera()
+            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the microscope")
             try:
                 imagePath = self.capturePiImage()
                 print(f"First paperfluidics image: {imagePath}")
@@ -326,8 +349,8 @@ class System:
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
             try:
-                #leadConcentration = analyzeColorimetric(imagePath, leadImagePath)['lead']
-                leadConcentration = analyzeColorimetric(testImagePath, testLeadImagePath)['lead']
+                #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
+                leadConcentration = paperfluidic_concentration(testImagePath, testLeadImagePath)['lead']
             except Exception as e:
                     print(f"Error during image analysis: {e}")
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
@@ -344,8 +367,8 @@ class System:
                     raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
             try:
-                #concentration = analyzeColorimetric(imagePath, finalImagePath)
-                concentration = analyzeColorimetric(testImagePath, testFinalImagePath)
+                #concentration = paperfluidic_concentration(imagePath, finalImagePath)
+                concentration = paperfluidic_concentration(testImagePath, testFinalImagePath)
                 concentration['Lead'] = leadConcentration
             except Exception as e:
                     print(f"Error during image capture: {e}")
@@ -385,6 +408,8 @@ class System:
                 print("Updated value:"+ str(concentration["Nitrite"]))
             else:
                 print("Nitrite characteristic not found")
+
+            self.resetConveyorBelt(firstIR, "Resetting the paperfludics conveyor belt", self.kit.stepper2)
         except Exception as e:
             print(f"Caught exception: {e}")
         except ImageCaptureError as ie:
@@ -393,7 +418,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
         finally:
             try:
-                self.cancelPaper()
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
