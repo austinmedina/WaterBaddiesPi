@@ -19,7 +19,7 @@ if __name__ == "__main__":
     dropperIR = IRSensor(20)
     microscopeIR = IRSensor(12)
     
-    print("First motor: " + firstIR.is_object_detected())
-    print("Dropper sensor: " + dropperIR.is_object_detected())
-    print("Camera sensor: " + microscopeIR.is_object_detected())
+    print(f"First motor: {firstIR.is_object_detected()}")
+    print(f"Dropper sensor: {dropperIR.is_object_detected()}")
+    print(f"Camera sensor: {microscopeIR.is_object_detected()}")
     
