@@ -8,18 +8,18 @@ import threading
 from datetime import datetime
 import time
 import random
-import cv2
+#import cv2
 
-from picamera2 import PiCamera2
-from libcamera import controls
+#from picamera2 import PiCamera2
+#sfrom libcamera import controls
 
 from breakpointSensor import IRSensor
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 from Motor import run_stepper
 
-from paperfluidic_analysis import paperfluidic_concentration
-from microscope_analysis import microplastic_concentration
+#from paperfluidic_analysis import paperfluidic_concentration
+#from microscope_analysis import microplastic_concentration
 
 class SlideNotDetectedError(Exception):
     """Exception raised when a cartridge is not detected"""
@@ -179,7 +179,7 @@ class System:
     
     def dispensePlasticWater(self):
         print("Dispensing water")
-        run_stepper(self.kit.stepper2, (self.cm_step * 8))
+        #run_stepper(self.kit.stepper2, (self.cm_step * 8))
         return
     
     def captureMicroscopeImage(self):
@@ -217,12 +217,16 @@ class System:
             dropperIR = IRSensor(20)
             microscopeIR = IRSensor(12)
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
+            time.sleep(2)
             sum = 0
             for i in range(5):
                 print("Starting microplastic slide" + str(i+1))
-                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper")
+                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1)
+                time.sleep(2)
                 self.dispensePlasticWater()
-                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope")
+                time.sleep(2)
+                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit.stepper1)
+                time.sleep(2)
                 # try:
                 #     imagePath = self.captureMicroscopeImage()
                 #     print(f"Microplastic image path: {imagePath}")

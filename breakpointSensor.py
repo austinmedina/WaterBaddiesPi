@@ -8,10 +8,10 @@ class IRSensor:
     
     def is_object_detected(self):
         if self.ir_sensor.value:
-            print("Object detected!")
+            #print("Object detected!")
             return True
         else:
-            print("No object detected!")
+            #print("No object detected!")
             return False
         
 if __name__ == "__main__":
