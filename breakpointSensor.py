@@ -15,7 +15,11 @@ class IRSensor:
             return False
         
 if __name__ == "__main__":
-    ir = IRSensor(26)
-    while True:
-        print(ir.is_object_detected())
+    firstIR = IRSensor(26)
+    dropperIR = IRSensor(20)
+    microscopeIR = IRSensor(12)
+    
+    print("First motor: " + firstIR.is_object_detected())
+    print("Dropper sensor: " + dropperIR.is_object_detected())
+    print("Camera sensor: " + microscopeIR.is_object_detected())
     
