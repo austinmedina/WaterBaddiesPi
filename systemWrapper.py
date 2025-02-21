@@ -178,6 +178,8 @@ class System:
     #         raise e
     
     def dispensePlasticWater(self):
+        print("Dispensing water")
+        run_stepper(self.kit.stepper2, (self.cm_step * 8))
         return
     
     def captureMicroscopeImage(self):
@@ -212,8 +214,8 @@ class System:
     def microplasticDetection(self):
         try:
             firstIR = IRSensor(26)
-            dropperIR = IRSensor(26)
-            microscopeIR = IRSensor(26)
+            dropperIR = IRSensor(20)
+            microscopeIR = IRSensor(12)
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
             sum = 0
             for i in range(5):
@@ -446,15 +448,15 @@ class System:
         microplasticDetectionThread = threading.Thread(target=self.microplasticDetection)
         microplasticDetectionThread.start()
 
-        inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection)
-        inorganicMetalThread.start()
+        # inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection)
+        # inorganicMetalThread.start()
 
-        arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection)
-        arsenicDetectionThread.start()
+        # arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection)
+        # arsenicDetectionThread.start()
 
         microplasticDetectionThread.join()
-        inorganicMetalThread.join()
-        arsenicDetectionThread.join()
+        # inorganicMetalThread.join()
+        # arsenicDetectionThread.join()
 
         print("Finished detection")
 
