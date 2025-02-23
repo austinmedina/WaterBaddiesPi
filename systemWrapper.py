@@ -150,7 +150,7 @@ class System:
             print("Can't receive frame (stream end?). Exiting ...")
             raise Exception("Couldnt open microscope picture frame")
         
-        path = f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
+        path = f'plasticImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         cv2.imwrite(path, frame)
 
         return path
@@ -242,7 +242,7 @@ class System:
     def capturePiImage():
         picam = Picamera2()
         picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
-        path = f'paperfluidicImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
+        path = f'paperfluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         picam.start_and_capture_file(path)
         return path
         
@@ -252,87 +252,92 @@ class System:
     def InorganicsMetalDetection(self, key):
         try:
             firstIR = IRSensor(26)
-            dropperIR = IRSensor(26)
-            microscopeIR = IRSensor(26)
+            dropperIR = IRSensor(20)
+            microscopeIR = IRSensor(12)
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper2)
+            time.sleep(2)
 
             self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper")
+            time.sleep(2)
             self.dispenseFluidicWater()
+            time.sleep(2)
             self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the microscope")
-            # try:
-            #     imagePath = self.capturePiImage()
-            #     print(f"First paperfluidics image: {imagePath}")
-            #     time.sleep(30)
-            #     leadImagePath = self.capturePiImage() #Just capture lead image
-            #     print(f"Lead paperfluidics image: {leadImagePath}")
+            try:
+                imagePath = self.capturePiImage()
+                print(f"First paperfluidics image: {imagePath}")
+                print("Waiting for lead reaction")
+                time.sleep(3)
+                leadImagePath = self.capturePiImage() #Just capture lead image
+                print(f"Lead paperfluidics image: {leadImagePath}")
 
-            #     #Just for testing
-            #     testImagePath = ""
-            #     testLeadImagePath = ""
-            # except Exception as e:
-            #         print(f"Error during image capture: {e}")
-            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+                #Just for testing
+                testImagePath = "./test_images/paperfluidic.jpg"
+                testLeadImagePath = "./test_images/paperfluidic_test.jpg"
+            except Exception as e:
+                    print(f"Error during image capture: {e}")
+                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
-            # try:
-            #     #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
-            #     leadConcentration = paperfluidic_concentration(testImagePath, testLeadImagePath)['lead']
-            # except Exception as e:
-            #         print(f"Error during image analysis: {e}")
-            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+            try:
+                #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
+                leadConcentration = paperfluidic_concentration(testImagePath, testLeadImagePath)['lead']
+            except Exception as e:
+                    print(f"Error during image analysis: {e}")
+                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
-            # time.sleep(530)
+            print("Waiting for paperfluidic reactions")
+            time.sleep(5)
 
-            # try:
-            #     finalImagePath = self.capturePiImage()
-            #     print(f"Final paperfluidics image: {finalImagePath}")
+            try:
+                finalImagePath = self.capturePiImage()
+                print(f"Final paperfluidics image: {finalImagePath}")
                 
-            #     testFinalImagePath = ""
-            # except Exception as e:
-            #         print(f"Error during image capture: {e}")
-            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+                testFinalImagePath = "./test_images/paperfluidic_test.jpg"
+            except Exception as e:
+                    print(f"Error during image capture: {e}")
+                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
             
-            # try:
-            #     #concentration = paperfluidic_concentration(imagePath, finalImagePath)
-            #     concentration = paperfluidic_concentration(testImagePath, testFinalImagePath)
-            #     concentration['Lead'] = leadConcentration
-            # except Exception as e:
-            #         print(f"Error during image capture: {e}")
-            #         raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+            try:
+                #concentration = paperfluidic_concentration(imagePath, finalImagePath)
+                concentration = paperfluidic_concentration(testImagePath, testFinalImagePath)
+                concentration['Lead'] = leadConcentration
+            except Exception as e:
+                    print(f"Error during image capture: {e}")
+                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
 
-            # leadChar = self.getCharacteristic("Lead")
-            # if (leadChar):
-            #     leadChar.WriteValue(str(concentration["Lead"]))
-            #     print("Updated value:"+ str(concentration["Lead"]))
-            # else:
-            #     print("Lead characteristic not found")
+            leadChar = self.getCharacteristic("Lead")
+            if (leadChar):
+                leadChar.WriteValue(str(concentration["Lead"]))
+                print("Updated value:"+ str(concentration["Lead"]))
+            else:
+                print("Lead characteristic not found")
 
-            # arsenicChar = self.getCharacteristic("Mercury")
-            # if (arsenicChar):
-            #     arsenicChar.WriteValue(str(concentration["Mercury"]))
-            #     print("Updated value:"+ str(concentration["Mercury"]))
-            # else:
-            #     print("Mercury characteristic not found")
+            arsenicChar = self.getCharacteristic("Mercury")
+            if (arsenicChar):
+                arsenicChar.WriteValue(str(concentration["Mercury"]))
+                print("Updated value:"+ str(concentration["Mercury"]))
+            else:
+                print("Mercury characteristic not found")
 
-            # cadmiumChar = self.getCharacteristic("Cadmium")
-            # if (cadmiumChar):
-            #     cadmiumChar.WriteValue(str(concentration["Cadmium"]))
-            #     print("Updated value:"+ str(concentration["Cadmium"]))
-            # else:
-            #     print("Cadmium characteristic not found")
+            cadmiumChar = self.getCharacteristic("Cadmium")
+            if (cadmiumChar):
+                cadmiumChar.WriteValue(str(concentration["Cadmium"]))
+                print("Updated value:"+ str(concentration["Cadmium"]))
+            else:
+                print("Cadmium characteristic not found")
 
-            # nitrateChar = self.getCharacteristic("Nitrate")
-            # if (nitrateChar):
-            #     nitrateChar.WriteValue(str(concentration["Nitrate"]))
-            #     print("Updated value:"+ str(concentration["Nitrate"]))
-            # else:
-            #     print("Nitrate characteristic not found")
+            nitrateChar = self.getCharacteristic("Nitrate")
+            if (nitrateChar):
+                nitrateChar.WriteValue(str(concentration["Nitrate"]))
+                print("Updated value:"+ str(concentration["Nitrate"]))
+            else:
+                print("Nitrate characteristic not found")
 
-            # nitriteChar = self.getCharacteristic("Nitrite")
-            # if (nitriteChar):
-            #     nitriteChar.WriteValue(str(concentration["Nitrite"]))
-            #     print("Updated value:"+ str(concentration["Nitrite"]))
-            # else:
-            #     print("Nitrite characteristic not found")
+            nitriteChar = self.getCharacteristic("Nitrite")
+            if (nitriteChar):
+                nitriteChar.WriteValue(str(concentration["Nitrite"]))
+                print("Updated value:"+ str(concentration["Nitrite"]))
+            else:
+                print("Nitrite characteristic not found")
 
             self.resetConveyorBelt(firstIR, "Resetting the paperfludics conveyor belt", self.kit.stepper2)
         except Exception as e:
