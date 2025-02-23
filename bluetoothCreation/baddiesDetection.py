@@ -52,6 +52,7 @@ class BaddiesDetectionService(Service):
         self.add_characteristic(GenericCharacteristic(self, "00000002-410e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Arsenic"))
         self.add_characteristic(GenericCharacteristic(self, "00000002-510e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Nitrite"))
         self.add_characteristic(GenericCharacteristic(self, "00000002-610e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Nitrate"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-710e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "ChangeKey"))
         
 class GenericCharacteristic(Characteristic):
     def __init__(self, service, UUID, options, desciptorUUID, descriptorValue, concentrationFunction = None):
@@ -66,12 +67,9 @@ class GenericCharacteristic(Characteristic):
         self.add_descriptor(GenericDescriptor(self, desciptorUUID, descriptorValue))
          
     def StartNotify(self):
-        if self.notifying:
-            return
-
         self.notifying = True
         value = self.ReadValue([])
-        print("Value" + str(value))
+        print("Value: " + str(value))
 
         self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
         print("Notified")

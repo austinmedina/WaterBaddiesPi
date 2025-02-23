@@ -9,13 +9,12 @@ from datetime import datetime
 import time
 import cv2
 
-from picamera2 import PiCamera2
+from picamera2 import Picamera2
 from libcamera import controls
 
 from breakpointSensor import IRSensor
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
-from Motor import run_stepper
 
 from paperfluidic_analysis import paperfluidic_concentration
 from microscope_analysis import microplastic_concentration
@@ -98,25 +97,37 @@ class System:
         pass
 
     def listenForDetectionStart(self):
-        self.startDetection()
+        while True:
+            command = input("Enter command (BR, MP, PF): ").upper()
+            if command in ('MP'):
+                self.startDetection(1)
+            elif command in ('PF'):
+                self.startDetection(0)
+            else:
+                print("Invalid command")
 
     def listenForBluetoothRestart(self):
         pass
+    
+    def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.SINGLE):
+        for i in range(steps):
+            stepper_motor.onestep(direction=direction, style=style)
+            time.sleep(0.01)
 
     def resetConveyorBelt(self, ir, message, motor):
         print(message)
         detected = ir.is_object_detected()
         while (not detected):
-            print("Moving Conveyor Belt")
-            run_stepper(motor, self.cm_step)
+#             print("Moving Conveyor Belt")
+            self.run_stepper(motor, self.cm_step)
             detected = ir.is_object_detected()
 
     def moveConveyorToSensor(self, targetIR, startIR, message, motor):
         print(message)
         detected = targetIR.is_object_detected()
         while ((not detected)):
-            print("Moving Conveyor Belt")
-            run_stepper(motor, self.cm_step)
+#             print("Moving Conveyor Belt")
+            self.run_stepper(motor, self.cm_step)
             detected = targetIR.is_object_detected()
             startDetected = startIR.is_object_detected()
             if (startDetected):
@@ -124,11 +135,11 @@ class System:
     
     def dispensePlasticWater(self):
         print("Dispensing water")
-        #run_stepper(self.kit.stepper2, (self.cm_step * 8))
+        #self.run_stepper(self.kit.stepper2, (self.cm_step * 8))
         return
     
     def captureMicroscopeImage(self):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(8)
         if not cap.isOpened():
             print("Error opening video stream or file")
             raise Exception("Couldnt open microscope stream")
@@ -156,7 +167,7 @@ class System:
                 
         return None
 
-    def microplasticDetection(self):
+    def microplasticDetection(self, key):
         try:
             firstIR = IRSensor(26)
             dropperIR = IRSensor(20)
@@ -164,7 +175,7 @@ class System:
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
             time.sleep(2)
             sum = 0
-            for i in range(5):
+            for i in range(1):
                 print("Starting microplastic slide" + str(i+1))
                 self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1)
                 time.sleep(2)
@@ -180,7 +191,7 @@ class System:
                     raise ImageCaptureError("Error during capturing image from the micropscope. Canceling microplastic job!")
 
                 try:    
-                    testImagePath = ".\test_images\Snap_027.jpg"
+                    testImagePath = "./test_images/Snap_027.jpg"
                     quantity = microplastic_concentration(testImagePath)
                     #quantity = microplastic_concentration(imagePath)
                 except Exception as e:
@@ -190,38 +201,55 @@ class System:
                 sum += quantity
                 self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
 
-            concentration = sum/5
+            concentration = sum
             
             mpChar = self.getCharacteristic("Microplastic")
             if (mpChar):
                 mpChar.WriteValue(str(concentration))
                 print("Updated value:"+ str(concentration))
+                
+                keyChar = self.getCharacteristic("ChangeKey")
+                if (keyChar):
+                    keyChar.WriteValue(key)
+                    print("Updated Key")
+                else:
+                    print("ChangeKey characteristic none")
             else:
-                print("characteristic none")
+                print("Microplastic characteristic not found")
         except Exception as e:
             print(f"Caught exception: {e}")
-        except ImageCaptureError as ie:
-            print(f"Caught image capture exception: {ie}")
-        except ImageAnalysisError as ia:
-            print(f"Caught image analysis exception: {ia}")
-        finally:
             try:
                 self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
             except Exception as ee:
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
+        except ImageCaptureError as ie:
+            print(f"Caught image capture exception: {ie}")
+            try:
+                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+            except Exception as ee:
+                print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
+            return
+        except ImageAnalysisError as ia:
+            print(f"Caught image analysis exception: {ia}")
+            try:
+                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+            except Exception as ee:
+                print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
+            return
+        
 
     def capturePiImage():
-        picam = PiCamera2()
+        picam = Picamera2()
         picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
         path = f'paperfluidicImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png'
-        picam.start_and_capture(path)
+        picam.start_and_capture_file(path)
         return path
         
     def dispenseFluidicWater(self):
         pass
                 
-    def InorganicsMetalDetection(self):
+    def InorganicsMetalDetection(self, key):
         try:
             firstIR = IRSensor(26)
             dropperIR = IRSensor(26)
@@ -320,7 +348,7 @@ class System:
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
         
-    def ArsenicDetection(self):
+    def ArsenicDetection(self, key):
         try:
             print("Do some arsenic testing")
             return
@@ -337,20 +365,23 @@ class System:
                 print(f"Fatal error while canceling arsenic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
     
-    def startDetection(self):
+    def startDetection(self, num):
         print("Initiating Water Baddies Detection")
-        time.sleep(10)
-        microplasticDetectionThread = threading.Thread(target=self.microplasticDetection)
-        microplasticDetectionThread.start()
+        key = datetime.now().strftime("%F %T.%f")[:-3]
+        
+        microplasticDetectionThread = threading.Thread(target=self.microplasticDetection, args=(key,))
+        if (num == 0):
+            microplasticDetectionThread.start()
 
-        # inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection)
-        # inorganicMetalThread.start()
+        inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
+        if (num == 1):
+            inorganicMetalThread.start()
 
-        # arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection)
+        # arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection, args=(key,))
         # arsenicDetectionThread.start()
 
         microplasticDetectionThread.join()
-        # inorganicMetalThread.join()
+        inorganicMetalThread.join()
         # arsenicDetectionThread.join()
 
         print("Finished detection")
@@ -365,8 +396,8 @@ if __name__ == "__main__":
         BleTools.setDiscoverable(wb.bus, 0)
         wb.adv.unregister()
         wb.app.quit()
-        System.kit.stepper1.release()
-        System.kit.stepper2.release()
+        wb.kit.stepper1.release()
+        wb.kit.stepper2.release()
         print("Motors released")
         
     

@@ -32,16 +32,16 @@ def microplastic_concentration(image_path):
 
     print(f'Approximate concentration: {concentration:.2f} particles/mL')
 
-    # Display
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-
-    ax[0].imshow(image)
-    ax[0].axis("off")
-
-    ax[1].imshow(labeled_image)
-    ax[1].axis("off")
-
-    plt.tight_layout()
-    plt.show()
+#     # Display
+#     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+# 
+#     ax[0].imshow(image)
+#     ax[0].axis("off")
+# 
+#     ax[1].imshow(labeled_image)
+#     ax[1].axis("off")
+# 
+#     plt.tight_layout()
+#     plt.show()
 
     return concentration
