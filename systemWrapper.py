@@ -7,7 +7,6 @@ from gi.repository import GLib
 import threading
 from datetime import datetime
 import time
-import cv2
 
 from picamera2 import Picamera2
 from libcamera import controls
@@ -16,7 +15,7 @@ from breakpointSensor import IRSensor
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 
-from paperfluidic_analysis import paperfluidic_concentration
+import paperfluidic_analysis as pfa
 from microscope_analysis import microplastic_concentration
 
 class SlideNotDetectedError(Exception):
@@ -100,9 +99,9 @@ class System:
         while True:
             command = input("Enter command (BR, MP, PF): ").upper()
             if command in ('MP'):
-                self.startDetection(1)
+                self.startDetection()
             elif command in ('PF'):
-                self.startDetection(0)
+                self.startDetection()
             else:
                 print("Invalid command")
 
@@ -135,7 +134,7 @@ class System:
     
     def dispensePlasticWater(self):
         print("Dispensing water")
-        #self.run_stepper(self.kit.stepper2, (self.cm_step * 8))
+        #self.run_stepper(self.kit.stepper1, (self.cm_step * 8))
         return
     
     def captureMicroscopeImage(self):
@@ -166,6 +165,14 @@ class System:
                     return characteristic
                 
         return None
+    
+    def updateKey(self, key):
+        keyChar = self.getCharacteristic("ChangeKey")
+        if (keyChar):
+            keyChar.WriteValue(key)
+            print("Updated Key")
+        else:
+            print("ChangeKey characteristic none")
 
     def microplasticDetection(self, key):
         try:
@@ -208,12 +215,7 @@ class System:
                 mpChar.WriteValue(str(concentration))
                 print("Updated value:"+ str(concentration))
                 
-                keyChar = self.getCharacteristic("ChangeKey")
-                if (keyChar):
-                    keyChar.WriteValue(key)
-                    print("Updated Key")
-                else:
-                    print("ChangeKey characteristic none")
+                self.updateKey(key)
             else:
                 print("Microplastic characteristic not found")
         except Exception as e:
@@ -239,11 +241,14 @@ class System:
             return
         
 
-    def capturePiImage():
+    def capturePiImage(self):
         picam = Picamera2()
+        picam.configure(picam.create_still_configuration()) # Add this line
+        picam.start()
         picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
-        path = f'paperfluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
-        picam.start_and_capture_file(path)
+        path = f'paperFluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
+        picam.capture_file(path)
+        picam.close()
         return path
         
     def dispenseFluidicWater(self):
@@ -254,14 +259,14 @@ class System:
             firstIR = IRSensor(26)
             dropperIR = IRSensor(20)
             microscopeIR = IRSensor(12)
-            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper2)
+            self.resetConveyorBelt(firstIR, "Resetting paperfluidic conveyor belt", self.kit.stepper1)
             time.sleep(2)
 
-            self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper")
+            self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper", self.kit.stepper1)
             time.sleep(2)
             self.dispenseFluidicWater()
             time.sleep(2)
-            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the microscope")
+            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the microscope", self.kit.stepper1)
             try:
                 imagePath = self.capturePiImage()
                 print(f"First paperfluidics image: {imagePath}")
@@ -275,14 +280,16 @@ class System:
                 testLeadImagePath = "./test_images/paperfluidic_test.jpg"
             except Exception as e:
                     print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+                    raise ImageCaptureError("Error during capturing image from the PiCamera for lead or base image. Canceling paperfluidics job!")
             
             try:
                 #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
-                leadConcentration = paperfluidic_concentration(testImagePath, testLeadImagePath)['lead']
+                print("Starting Lead Concentration Analysis")
+                vals = pfa.paperfluidic_concentration(testImagePath, testLeadImagePath)
+                leadConcentration = vals['Lead']
             except Exception as e:
                     print(f"Error during image analysis: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+                    raise ImageCaptureError("Error analyzing lead image. Canceling paperfluidics job!")
             
             print("Waiting for paperfluidic reactions")
             time.sleep(5)
@@ -294,11 +301,11 @@ class System:
                 testFinalImagePath = "./test_images/paperfluidic_test.jpg"
             except Exception as e:
                     print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
+                    raise ImageCaptureError("Error during capturing final image from the PiCamera. Canceling paperfluidics job!")
             
             try:
                 #concentration = paperfluidic_concentration(imagePath, finalImagePath)
-                concentration = paperfluidic_concentration(testImagePath, testFinalImagePath)
+                concentration = pfa.paperfluidic_concentration(testImagePath, testFinalImagePath)
                 concentration['Lead'] = leadConcentration
             except Exception as e:
                     print(f"Error during image capture: {e}")
@@ -308,6 +315,8 @@ class System:
             if (leadChar):
                 leadChar.WriteValue(str(concentration["Lead"]))
                 print("Updated value:"+ str(concentration["Lead"]))
+                
+                self.updateKey(key)
             else:
                 print("Lead characteristic not found")
 
@@ -315,6 +324,8 @@ class System:
             if (arsenicChar):
                 arsenicChar.WriteValue(str(concentration["Mercury"]))
                 print("Updated value:"+ str(concentration["Mercury"]))
+                
+                self.updateKey(key)
             else:
                 print("Mercury characteristic not found")
 
@@ -322,6 +333,8 @@ class System:
             if (cadmiumChar):
                 cadmiumChar.WriteValue(str(concentration["Cadmium"]))
                 print("Updated value:"+ str(concentration["Cadmium"]))
+                
+                self.updateKey(key)
             else:
                 print("Cadmium characteristic not found")
 
@@ -329,6 +342,8 @@ class System:
             if (nitrateChar):
                 nitrateChar.WriteValue(str(concentration["Nitrate"]))
                 print("Updated value:"+ str(concentration["Nitrate"]))
+                
+                self.updateKey(key)
             else:
                 print("Nitrate characteristic not found")
 
@@ -336,22 +351,34 @@ class System:
             if (nitriteChar):
                 nitriteChar.WriteValue(str(concentration["Nitrite"]))
                 print("Updated value:"+ str(concentration["Nitrite"]))
+                
+                self.updateKey(key)
             else:
                 print("Nitrite characteristic not found")
 
-            self.resetConveyorBelt(firstIR, "Resetting the paperfludics conveyor belt", self.kit.stepper2)
+            self.resetConveyorBelt(firstIR, "Resetting the paperfludics conveyor belt", self.kit.stepper1)
         except Exception as e:
             print(f"Caught exception: {e}")
-        except ImageCaptureError as ie:
-            print(f"Caught image capture exception: {ie}")
-        except ImageAnalysisError as ia:
-            print(f"Caught image analysis exception: {ia}")
-        finally:
             try:
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
+        except ImageCaptureError as ie:
+            print(f"Caught image capture exception: {ie}")
+            try:
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+            except Exception as ee:
+                print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
+            return
+        except ImageAnalysisError as ia:
+            print(f"Caught image analysis exception: {ia}")
+            try:
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+            except Exception as ee:
+                print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
+            return
+            
         
     def ArsenicDetection(self, key):
         try:
@@ -370,22 +397,20 @@ class System:
                 print(f"Fatal error while canceling arsenic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
     
-    def startDetection(self, num):
+    def startDetection(self):
         print("Initiating Water Baddies Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
         
-        microplasticDetectionThread = threading.Thread(target=self.microplasticDetection, args=(key,))
-        if (num == 0):
-            microplasticDetectionThread.start()
+        #microplasticDetectionThread = threading.Thread(target=self.microplasticDetection, args=(key,))
+        #microplasticDetectionThread.start()
 
         inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
-        if (num == 1):
-            inorganicMetalThread.start()
+        inorganicMetalThread.start()
 
         # arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection, args=(key,))
         # arsenicDetectionThread.start()
 
-        microplasticDetectionThread.join()
+        #microplasticDetectionThread.join()
         inorganicMetalThread.join()
         # arsenicDetectionThread.join()
 
@@ -395,14 +420,13 @@ if __name__ == "__main__":
     wb = System()
     try:
         while True:
-            print("Still Running...")
-            time.sleep(10)
+            continue
     except KeyboardInterrupt:
         BleTools.setDiscoverable(wb.bus, 0)
         wb.adv.unregister()
         wb.app.quit()
         wb.kit.stepper1.release()
-        wb.kit.stepper2.release()
+        wb.kit.stepper1.release()
         print("Motors released")
         
     

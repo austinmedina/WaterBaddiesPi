@@ -2,14 +2,6 @@ import cv2
 import numpy as np
 from skimage import io, color
 
-
-def load_and_preprocess_image(image_path):
-    image = crop_image(image_path)
-    # Convert to Lab color space for better color comparison
-    lab_image = color.rgb2lab(image)
-    return lab_image
-
-
 def crop_image(image_path):
     image = io.imread(image_path)
 
@@ -33,6 +25,13 @@ def crop_image(image_path):
     cropped_image = image[y:y + h, x:x + w]
     return cropped_image
 
+def load_and_preprocess_image(image_path):
+    print("Preprocessing Image")
+    image = crop_image(image_path)
+    # Convert to Lab color space for better color comparison
+    lab_image = color.rgb2lab(image)
+    return lab_image
+
 
 def paperfluidic_concentration(reference_image_path, input_image_path,
                                region_radius=5):
@@ -44,6 +43,8 @@ def paperfluidic_concentration(reference_image_path, input_image_path,
 
     reference_image = load_and_preprocess_image(reference_image_path)
     input_image = load_and_preprocess_image(input_image_path)
+    
+    print("Done preprocessing")
 
     for i, (x, y) in enumerate(reservoir_coords):
         # Extract small regions around the reservoir in both images
@@ -60,17 +61,18 @@ def paperfluidic_concentration(reference_image_path, input_image_path,
         color_distance = np.linalg.norm(mean_color_after - mean_color_before)
 
         color_changes[key_list[i]] = color_distance
+        print(color_distance)
 
     return color_changes
 
-#
-# image_before_path = "paperfluidic.jpg"
-# image_after_path = "paperfluidic_test.jpg"
-#
+
+# image_before_path = "./test_images/paperfluidic.jpg"
+# image_after_path = "./test_images/paperfluidic_test.jpg"
+# 
 # color_changes = paperfluidic_concentration(image_before_path, image_after_path)
-#
+# 
 # print(color_changes)
-#
-# # Display results
+# 
+# #Display results
 # for reservoir, change in color_changes.items():
 #     print(f"{reservoir}: Color Change Distance = {change:.2f}")
