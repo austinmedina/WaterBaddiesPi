@@ -18,6 +18,8 @@ from adafruit_motor import stepper
 import paperfluidic_analysis as pfa
 from microscope_analysis import microplastic_concentration
 
+from DisplayHAT import DisplayHat
+
 class SlideNotDetectedError(Exception):
     """Exception raised when a cartridge is not detected"""
 
@@ -59,8 +61,7 @@ class System:
         self.kit = MotorKit()
         self.cm_step = 31
         self.startBluetooth()
-        self.bluetoothRestartThread = threading.Thread(target=self.listenForBluetoothRestart).start()
-        self.detectionStartThread = threading.Thread(target=self.listenForDetectionStart).start()
+        self.display = DisplayHat(startMicroplasticDetection, startInorganicsMetalDetection)
         
     
     def startBluetooth(self):
@@ -92,21 +93,15 @@ class System:
         self.app.quit()
         self.startBluetooth()
 
-    def start(self):
-        pass
-
-    def listenForDetectionStart(self):
-        while True:
-            command = input("Enter command (BR, MP, PF): ").upper()
-            if command in ('MP'):
-                self.startDetection()
-            elif command in ('PF'):
-                self.startDetection()
-            else:
-                print("Invalid command")
-
-    def listenForBluetoothRestart(self):
-        pass
+#     def listenForDetectionStart(self):
+#         while True:
+#             command = input("Enter command (BR, MP, PF): ").upper()
+#             if command in ('MP'):
+#                 self.startDetection()
+#             elif command in ('PF'):
+#                 self.startDetection()
+#             else:
+#                 print("Invalid command")
     
     def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.SINGLE):
         for i in range(steps):
@@ -396,23 +391,46 @@ class System:
             except Exception as ee:
                 print(f"Fatal error while canceling arsenic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
+        
+    def startMicroplasticDetection(self):
+        print("Initiating Microplastics Thread")
+        key = datetime.now().strftime("%F %T.%f")[:-3]
+        microplasticThread = threading.Thread(target=self.microplasticDetection, args=(key,))
+        microplasticThread.start()
+        microplasticThread.join()
+        
+    def startInorganicsMetalDetection(self):
+        print("Initiating Paperfluidic Thread")
+        key = datetime.now().strftime("%F %T.%f")[:-3]
+        microplasticThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
+        microplasticThread.start()
+        microplasticThread.join()
+        
+    def startArsenicDetection(self):
+        print("Initiating Paperfluidic Thread")
+        key = datetime.now().strftime("%F %T.%f")[:-3]
+        microplasticThread = threading.Thread(target=self.ArsenicDetection, args=(key,))
+        microplasticThread.start()
+        microplasticThread.join()
     
     def startDetection(self):
         print("Initiating Water Baddies Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
         
-        #microplasticDetectionThread = threading.Thread(target=self.microplasticDetection, args=(key,))
-        #microplasticDetectionThread.start()
+        threads = []
+        
+        threads.add(threading.Thread(target=self.InorganicsMetalDetection, args=(key,)))
+        
+        #threads.add(threading.Thread(target=self.microplasticDetection, args=(key,)))
 
-        inorganicMetalThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
-        inorganicMetalThread.start()
+        for thread in threads:
+            thread.start()
 
-        # arsenicDetectionThread = threading.Thread(target=self.ArsenicDetection, args=(key,))
-        # arsenicDetectionThread.start()
+        # threads.add(threading.Thread(target=self.ArsenicDetection, args=(key,)))
 
-        #microplasticDetectionThread.join()
-        inorganicMetalThread.join()
-        # arsenicDetectionThread.join()
+        
+        for thread in threads:
+            thread.join()
 
         print("Finished detection")
 
