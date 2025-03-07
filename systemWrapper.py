@@ -61,7 +61,7 @@ class System:
         self.kit = MotorKit()
         self.cm_step = 31
         self.startBluetooth()
-        self.display = DisplayHat(startMicroplasticDetection, startInorganicsMetalDetection)
+        self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startArsenicDetection, self.startDetection, self.restartBluetooth)
         
     
     def startBluetooth(self):
@@ -445,6 +445,7 @@ if __name__ == "__main__":
         wb.app.quit()
         wb.kit.stepper1.release()
         wb.kit.stepper1.release()
+        wb.display.destroy()
         print("Motors released")
         
     
