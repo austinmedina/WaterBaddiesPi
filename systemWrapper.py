@@ -7,6 +7,7 @@ from gi.repository import GLib
 import threading
 from datetime import datetime
 import time
+from concurrent.futures import ProcessPoolExecutor
 
 from picamera2 import Picamera2
 from libcamera import controls
@@ -14,6 +15,7 @@ from libcamera import controls
 from breakpointSensor import IRSensor
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
+from gpiozero import LED
 
 import paperfluidic_analysis as pfa
 from microscope_analysis import microplastic_concentration
@@ -61,9 +63,9 @@ class System:
         self.kit = MotorKit()
         self.cm_step = 31
         self.startBluetooth()
+        self.executor = ProcessPoolExecutor()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startArsenicDetection, self.startDetection, self.restartBluetooth)
-        
-    
+
     def startBluetooth(self):
 
         BleTools.power_adapter(self.bus)
@@ -133,6 +135,8 @@ class System:
         return
     
     def captureMicroscopeImage(self):
+        led = LED(35) #Blue spectrum LED
+        led.on()
         cap = cv2.VideoCapture(8)
         if not cap.isOpened():
             print("Error opening video stream or file")
@@ -146,7 +150,7 @@ class System:
         
         path = f'plasticImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         cv2.imwrite(path, frame)
-
+        led.off()
         return path
 
     def getCharacteristic(self, charName):
@@ -237,6 +241,9 @@ class System:
         
 
     def capturePiImage(self):
+        led = LED(40)
+        led.on()
+        time.sleep(0.5)
         picam = Picamera2()
         picam.configure(picam.create_still_configuration()) # Add this line
         picam.start()
@@ -244,6 +251,7 @@ class System:
         path = f'paperFluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         picam.capture_file(path)
         picam.close()
+        led.off()
         return path
         
     def dispenseFluidicWater(self):
@@ -393,46 +401,33 @@ class System:
             return
         
     def startMicroplasticDetection(self):
-        print("Initiating Microplastics Thread")
+        print("Initiating Microplastic Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
-        microplasticThread = threading.Thread(target=self.microplasticDetection, args=(key,))
-        microplasticThread.start()
-        microplasticThread.join()
-        
+        # Fire the process but don't wait
+        self.executor.submit(self.microplasticDetection, key)
+
     def startInorganicsMetalDetection(self):
-        print("Initiating Paperfluidic Thread")
+        print("Initiating Inorganics Metal Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
-        microplasticThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
-        microplasticThread.start()
-        microplasticThread.join()
-        
+        self.executor.submit(self.InorganicsMetalDetection, key)
+
     def startArsenicDetection(self):
-        print("Initiating Paperfluidic Thread")
+        print("Initiating Arsenic Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
-        microplasticThread = threading.Thread(target=self.ArsenicDetection, args=(key,))
-        microplasticThread.start()
-        microplasticThread.join()
-    
+        self.executor.submit(self.ArsenicDetection, key)
+
     def startDetection(self):
-        print("Initiating Water Baddies Detection")
+        print("Initiating All Detections in Parallel")
         key = datetime.now().strftime("%F %T.%f")[:-3]
-        
-        threads = []
-        
-        threads.add(threading.Thread(target=self.InorganicsMetalDetection, args=(key,)))
-        
-        #threads.add(threading.Thread(target=self.microplasticDetection, args=(key,)))
 
-        for thread in threads:
-            thread.start()
+        # Submit all three processes in parallel
+        futures = [
+            self.executor.submit(self.microplasticDetection, key),
+            self.executor.submit(self.InorganicsMetalDetection, key),
+            self.executor.submit(self.ArsenicDetection, key)
+        ]
 
-        # threads.add(threading.Thread(target=self.ArsenicDetection, args=(key,)))
-
-        
-        for thread in threads:
-            thread.join()
-
-        print("Finished detection")
+        print("All detections started. Waiting for results in background.")
 
 if __name__ == "__main__":
     wb = System()
@@ -440,13 +435,16 @@ if __name__ == "__main__":
         while True:
             continue
     except KeyboardInterrupt:
+        print("Shutting down processes...")
+        wb.executor.shutdown(wait=True)  # Ensure all processes exit
         BleTools.setDiscoverable(wb.bus, 0)
         wb.adv.unregister()
         wb.app.quit()
         wb.kit.stepper1.release()
         wb.kit.stepper1.release()
         wb.display.destroy()
-        print("Motors released")
+        print("Motors released. System shut down cleanly.")
+
         
     
 
