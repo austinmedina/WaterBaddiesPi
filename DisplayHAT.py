@@ -115,6 +115,7 @@ class DisplayHat():
 
     # Function to keep listening for button events
     def button_listener(self, microplastics, paperfluidics, arsenic, allStart, bluetoothReset, destroy=None):
+        #Need check to make sure multiple processes arent being run at the same time. Cant run all and microplastics at the same timme
         self.displayhatmini.button_a.when_pressed = microplastics
         self.displayhatmini.button_b.when_pressed = paperfluidics
         self.displayhatmini.button_x.when_pressed = bluetoothReset
