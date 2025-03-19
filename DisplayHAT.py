@@ -18,7 +18,7 @@ from displayhatmini import DisplayHATMini
 # Initialize Display HAT Mini
 class DisplayHat():
     
-    def __init__(self, startMicroplasticDetection, startInorganicsMetalDetection, startArsenicDetection, startAll, restartBluetooth):
+    def __init__(self, startMicroplasticDetection, startInorganicsMetalDetection, startAll, restartBluetooth):
         self.width = DisplayHATMini.WIDTH
         self.height = DisplayHATMini.HEIGHT
         self.buffer = Image.new("RGB", (self.width, self.height))
@@ -50,12 +50,12 @@ class DisplayHat():
         # Timer and batch state
         self.counterStep = 0
         
-        self.update_display(None, None, None)
+        self.update_display()
         # Show initial screen
         self.counter_thread = threading.Thread(target=self.counter, daemon=True)
         self.counter_thread.start()
         # Run the button listener in a separate thread
-        self.button_thread = threading.Thread(target=self.button_listener, args=(startMicroplasticDetection, startInorganicsMetalDetection, startArsenicDetection, startAll, restartBluetooth, None), daemon=True)
+        self.button_thread = threading.Thread(target=self.button_listener, args=(startMicroplasticDetection, startInorganicsMetalDetection, startAll, restartBluetooth, None), daemon=True)
         self.button_thread.start()
 
     def toggle_dark(self):
@@ -115,10 +115,10 @@ class DisplayHat():
         if ("warning" in texts):
             self.warning = texts["warning"]
 
-        self.updated_display()
+        self.update_display()
 
     # Function to keep listening for button events
-    def button_listener(self, microplastics, paperfluidics, arsenic, allStart, bluetoothReset, destroy=None):
+    def button_listener(self, microplastics, paperfluidics, allStart, bluetoothReset, destroy=None):
         #Need check to make sure multiple processes arent being run at the same time. Cant run all and microplastics at the same timme
         self.displayhatmini.button_a.when_pressed = microplastics
         self.displayhatmini.button_b.when_pressed = paperfluidics

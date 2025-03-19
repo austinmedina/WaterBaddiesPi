@@ -7,7 +7,6 @@ from gi.repository import GLib
 import threading
 from datetime import datetime
 import time
-from concurrent.futures import ProcessPoolExecutor
 
 from picamera2 import Picamera2
 from libcamera import controls
@@ -63,8 +62,7 @@ class System:
         self.kit = MotorKit()
         self.cm_step = 31
         self.startBluetooth()
-        self.executor = ProcessPoolExecutor()
-        self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startArsenicDetection, self.startDetection, self.restartBluetooth)
+        self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth)
 
     def startBluetooth(self):
 
@@ -116,16 +114,18 @@ class System:
         detected = ir.is_object_detected()
         while (not detected):
 #             print("Moving Conveyor Belt")
-            self.run_stepper(motor, self.cm_step)
+            self.run_stepper(motor, self.cm_step * 10)
             detected = ir.is_object_detected()
+            detected = True
 
     def moveConveyorToSensor(self, targetIR, startIR, message, motor):
         print(message)
         detected = targetIR.is_object_detected()
-        while ((not detected)):
+        while (not detected):
 #             print("Moving Conveyor Belt")
-            self.run_stepper(motor, self.cm_step)
+            self.run_stepper(motor, self.cm_step * 10)
             detected = targetIR.is_object_detected()
+            detected = True
             startDetected = startIR.is_object_detected()
             if (startDetected):
                 self.display.updateText({"warning":"Conveyor belt not supposed to be at start but is"})
@@ -388,7 +388,6 @@ class System:
                 self.updateKey(key)
             else:
                 print("Nitrite characteristic not found")
-
             
             self.display.updateText({"stage":"Resetting the paperfludics conveyor belt"})
             self.resetConveyorBelt(firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit.stepper1)
@@ -426,19 +425,17 @@ class System:
         self.display.updateText({"stage":"Initiating Microplastic Detection"})
         print("Initiating Microplastic Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
-        self.executor.submit(self.microplasticDetection, key)
+        mpThread = threading.Thread(target=self.microplasticDetection, args=(key,))
+        mpThread.start()
+        mpThread.join()
 
     def startInorganicsMetalDetection(self):
-        self.display.updateText({"stage":"Initiating Metal Detection"})
+        self.display.updateText({"stage":"Initiating Inorganics Metal Detection"})
         print("Initiating Inorganics Metal Detection")
         key = datetime.now().strftime("%F %T.%f")[:-3]
-        self.executor.submit(self.InorganicsMetalDetection, key)
-
-    def startArsenicDetection(self):
-        self.display.updateText({"stage":"Initiating Arsenic Detection"})
-        print("Initiating Arsenic Detection")
-        key = datetime.now().strftime("%F %T.%f")[:-3]
-        self.executor.submit(self.ArsenicDetection, key)
+        pfThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
+        pfThread.start()
+        pfThread.join()
 
     def startDetection(self):
         self.display.updateText({"stage":"Initiating All Detections in Parallel"})
@@ -446,15 +443,20 @@ class System:
         key = datetime.now().strftime("%F %T.%f")[:-3]
 
         # Submit all three processes in parallel
-        futures = [
-            self.executor.submit(self.microplasticDetection, key),
-            self.executor.submit(self.InorganicsMetalDetection, key),
-            self.executor.submit(self.ArsenicDetection, key)
+        threads = [
+            threading.Thread(target=self.microplasticDetection, args=(key,)),
+            threading.Thread(target=self.InorganicsMetalDetection, args=(key,)),
         ]
+        
+        for thread in threads:
+            thread.start()
 
         self.display.updateText({"stage":"All detections started. Waiting for results in background."})
         print("All detections started. Waiting for results in background.")
-
+        
+        for thread in threads:
+            thread.join()
+        
 if __name__ == "__main__":
     wb = System()
     try:
