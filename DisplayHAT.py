@@ -27,11 +27,7 @@ class DisplayHat():
         self.displayhatmini = DisplayHATMini(self.buffer)
         self.displayhatmini.set_led(0.05, 0.05, 0.05)
 
-        # Load fonts
-        try:
-            self.font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
-        except:
-            self.font = ImageFont.load_default()  # Fallback if font not found
+        self.font = ImageFont.load_default()
 
         # Set up button hold actions (3-second hold time)
         self.displayhatmini.button_a.hold_time = 3  # Hold for 3 seconds before shutdown
@@ -47,11 +43,14 @@ class DisplayHat():
         self.mode_timer = "blue"
         self.mode_percentage = "green"
         self.mode_warning = "red"
+
+        self.stage = ""
+        self.warning = ""
         
         # Timer and batch state
         self.counterStep = 0
         
-        self.update_display()
+        self.update_display(None, None, None)
         # Show initial screen
         self.counter_thread = threading.Thread(target=self.counter, daemon=True)
         self.counter_thread.start()
@@ -60,7 +59,7 @@ class DisplayHat():
         self.button_thread.start()
 
     def toggle_dark(self):
-        self.switch = not switch  # Toggle between 1 and -1
+        self.switch = not self.switch  # Toggle between 1 and -1
         if self.switch == False:
             self.mode_colorFont = "white"
             self.mode_background = "black"
@@ -86,16 +85,14 @@ class DisplayHat():
         currentCounter = time.strftime("%H:%M:%S", time.gmtime(self.counterStep))
         self.draw.text((10, 10), f"Timer: {currentCounter}", font=self.font, fill=self.mode_timer)
 
-        current_state = 1
-        self.draw.text((10, 50), f"Stage:\n{current_state}", font=self.font, fill=self.mode_colorFont)
+        # Current Stage
+        stage_text = f"Stage:\n{self.stage}" if self.stage else "Stage:\nNot Started"
+        self.draw.text((10, 50), stage_text, font=self.font, fill=self.mode_colorFont)
 
-        # Completed State
-        state_index=0
-        completed_text = "Completed:\nNone"
-        self.draw.text((10, 100), completed_text, font=self.font, fill=self.mode_colorFont)
         # Warning Message
-        warning_text = "Warning:\nNone"
+        warning_text = f"Warning:\n{self.warning}" if self.warning else "Warning:\nNone"
         self.draw.text((10, 150), warning_text, font=self.font, fill=self.mode_warning)
+
         # Percent Completed
         percent = int(78)
         self.draw.text((self.width - 60, self.height - 40), f"{percent}%", font=self.font, fill=self.mode_percentage)
@@ -112,6 +109,13 @@ class DisplayHat():
             self.update_display()
             time.sleep(1)
 
+    def updateText(self, texts):
+        if ("stage" in texts):
+            self.stage = texts["stage"]
+        if ("warning" in texts):
+            self.warning = texts["warning"]
+
+        self.updated_display()
 
     # Function to keep listening for button events
     def button_listener(self, microplastics, paperfluidics, arsenic, allStart, bluetoothReset, destroy=None):
@@ -119,9 +123,9 @@ class DisplayHat():
         self.displayhatmini.button_a.when_pressed = microplastics
         self.displayhatmini.button_b.when_pressed = paperfluidics
         self.displayhatmini.button_x.when_pressed = bluetoothReset
-        self.displayhatmini.button_y.when_pressed =self.toggle_dark
+        self.displayhatmini.button_y.when_pressed = self.toggle_dark
         
-        self.displayhatmini.button_a.when_held = arsenic
+        self.displayhatmini.button_a.when_held = None #Previously arsenic
         self.displayhatmini.button_b.when_held = allStart
         self.displayhatmini.button_x.when_held = lambda: os.system("sudo shutdown -h now")
         self.displayhatmini.button_y.when_held = lambda: os.system("sudo reboot now")
