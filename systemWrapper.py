@@ -60,6 +60,10 @@ class System:
         self.adv = None
         self.loop = None
         self.kit = MotorKit()
+        self.kit2 = MotorKit(address=0x61)
+        self.firstIR = IRSensor(26)
+        self.dropperIR = IRSensor(20)
+        self.microscopeIR = IRSensor(12)
         self.cm_step = 31
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth)
@@ -134,7 +138,7 @@ class System:
     def dispensePlasticWater(self):
         self.display.updateText({"stage":"Dispensing water"})
         print("Dispensing water")
-        #self.run_stepper(self.kit.stepper1, (self.cm_step * 8))
+        self.run_stepper(self.kit.stepper2, (self.cm_step * 8))
         return
     
     def captureMicroscopeImage(self):
@@ -180,26 +184,27 @@ class System:
 
     def microplasticDetection(self, key):
         try:
-            firstIR = IRSensor(26)
-            dropperIR = IRSensor(20)
-            microscopeIR = IRSensor(12)
+#             firstIR = IRSensor(26)
+#             dropperIR = IRSensor(20)
+#             microscopeIR = IRSensor(12)
             self.display.updateText({"stage":"Resetting microplastic conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(self.firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
             time.sleep(2)
             sum = 0
             for i in range(1):
                 print("Starting microplastic slide" + str(i+1))
                 self.display.updateText({"stage":"Fetching microplastic slide and moving slide under dropper"})
-                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1)
+                self.moveConveyorToSensor(self.dropperIR, self.firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1)
                 time.sleep(2)
                 self.dispensePlasticWater()
                 time.sleep(2)
                 self.display.updateText({"stage":"Moving microplastic slide under microscope"})
-                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit.stepper1)
+                self.moveConveyorToSensor(self.microscopeIR, self.firstIR, "Moving microplastic slide under microscope", self.kit.stepper1)
                 time.sleep(2)
                 try:
-                    imagePath = self.captureMicroscopeImage()
-                    print(f"Microplastic image path: {imagePath}")
+                    #imagePath = self.captureMicroscopeImage()
+                    #print(f"Microplastic image path: {imagePath}")
+                    print("Hello")
                 except Exception as e:
                     self.display.updateText({"warning":f"Error during image capture: {e}"})
                     print(f"Error during image capture: {e}")
@@ -228,7 +233,7 @@ class System:
                 print("Microplastic characteristic not found")
 
             self.display.updateText({"stage": "Bluetooth Uploaded.  Resetting conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(self.firstIR, "Resetting conveyor belt", self.kit.stepper1)
             
             self.display.updateText({"stage": "Microplastic Detection Finished"})
         except Exception as e:
@@ -236,7 +241,7 @@ class System:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateText({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(self.firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
             except Exception as ee:
                 self.display.updateText({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -245,7 +250,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateText({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(self.firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
             except Exception as ee:
                 self.display.updateText({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -254,7 +259,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateText({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(self.firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
             except Exception as ee:
                 self.display.updateText({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -262,7 +267,7 @@ class System:
         
 
     def capturePiImage(self):
-        led = LED(40)
+        led = LED(21)
         led.on()
         time.sleep(0.5)
         picam = Picamera2()
@@ -276,23 +281,26 @@ class System:
         return path
         
     def dispenseFluidicWater(self):
-        pass
+        self.display.updateText({"stage":"Dispensing Paperfluidics water"})
+        print("Dispensing Paperfluidicswater")
+        self.run_stepper(self.kit2.stepper2, (self.cm_step * 8))
+        return
                 
     def InorganicsMetalDetection(self, key):
         try:
-            firstIR = IRSensor(26)
-            dropperIR = IRSensor(20)
-            microscopeIR = IRSensor(12)
+#             firstIR = IRSensor(26)
+#             dropperIR = IRSensor(20)
+#             microscopeIR = IRSensor(12)
             self.display.updateText({"stage":"Resetting paperfluidic conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting paperfluidic conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(self.firstIR, "Resetting paperfluidic conveyor belt", self.kit2.stepper1)
             time.sleep(2)
             self.display.updateText({"stage":"Fetching paperfluidics and moving the slide under the water dropper"})
-            self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper", self.kit.stepper1)
+            self.moveConveyorToSensor(self.dropperIR, self.firstIR, "Fetching paperfluidics and moving the slide under the water dropper", self.kit2.stepper1)
             time.sleep(2)
             self.dispenseFluidicWater()
             time.sleep(2)
-            self.display.updateText({"stage":"Moving paperluidics under the microscope"})
-            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the microscope", self.kit.stepper1)
+            self.display.updateText({"stage":"Moving paperluidics under the camera"})
+            self.moveConveyorToSensor(self.microscopeIR, self.firstIR, "Moving paperluidics under the camera", self.kit2.stepper1)
             try:
                 imagePath = self.capturePiImage()
                 print(f"First paperfluidics image: {imagePath}")
@@ -390,14 +398,14 @@ class System:
                 print("Nitrite characteristic not found")
             
             self.display.updateText({"stage":"Resetting the paperfludics conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(self.firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit2.stepper1)
 
             self.display.updateText({"stage": "Inorganics and Metal Detection Finished"})
         except Exception as e:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateText({"warning":"Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+                self.resetConveyorBelt(self.firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
                 self.display.updateText({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -406,7 +414,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateText({"warning":"Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+                self.resetConveyorBelt(self.firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
                 self.display.updateText({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -415,7 +423,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateText({"warning":"Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+                self.resetConveyorBelt(self.firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
                 self.display.updateText({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")

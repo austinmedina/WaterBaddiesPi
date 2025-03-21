@@ -123,7 +123,7 @@ class DisplayHat():
         self.displayhatmini.button_a.when_pressed = microplastics
         self.displayhatmini.button_b.when_pressed = paperfluidics
         self.displayhatmini.button_x.when_pressed = bluetoothReset
-        self.displayhatmini.button_y.when_pressed = self.toggle_dark
+        self.displayhatmini.button_y.when_pressed = allStart
         
         self.displayhatmini.button_a.when_held = None #Previously arsenic
         self.displayhatmini.button_b.when_held = allStart
