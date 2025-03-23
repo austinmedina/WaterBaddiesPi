@@ -6,6 +6,7 @@ from gpiozero import LED, Button
 from threading import Lock
 from gpiozero import Device
 import lgpio
+from queue import Queue
 
 try:
     displayhatmini.close()  # Release GPIO pins before reinitializing
@@ -46,17 +47,19 @@ class DisplayHat():
 
         self.stage = ""
         self.warning = ""
+        self.messageQueue = Queue()
         
         # Timer and batch state
         self.counterStep = 0
         
-        self.update_display()
-        # Show initial screen
         self.counter_thread = threading.Thread(target=self.counter, daemon=True)
         self.counter_thread.start()
         # Run the button listener in a separate thread
         self.button_thread = threading.Thread(target=self.button_listener, args=(startMicroplasticDetection, startInorganicsMetalDetection, startAll, restartBluetooth, None), daemon=True)
         self.button_thread.start()
+
+        self.messageThread = threading.Thread(target=self.updateText, daemon=True)
+        self.messageThread.start()
 
     def toggle_dark(self):
         self.switch = not self.switch  # Toggle between 1 and -1
@@ -109,13 +112,21 @@ class DisplayHat():
             self.update_display()
             time.sleep(1)
 
-    def updateText(self, texts):
-        if ("stage" in texts):
-            self.stage = texts["stage"]
-        if ("warning" in texts):
-            self.warning = texts["warning"]
+    def updateText(self):
+        while True:
+            try:
+                texts = self.messageQueue.get()
+                if ("stage" in texts):
+                    self.stage = texts["stage"]
+                if ("warning" in texts):
+                    self.warning = texts["warning"]
+                time.sleep(3)
+                self.update_display()
+            except:
+                pass
 
-        self.update_display()
+    def updateQueue(self, text):
+        self.messageQueue.put(text)
 
     # Function to keep listening for button events
     def button_listener(self, microplastics, paperfluidics, allStart, bluetoothReset, destroy=None):
@@ -126,7 +137,7 @@ class DisplayHat():
         self.displayhatmini.button_y.when_pressed = allStart
         
         self.displayhatmini.button_a.when_held = None #Previously arsenic
-        self.displayhatmini.button_b.when_held = allStart
+        self.displayhatmini.button_b.when_held = self.toggle_dark()
         self.displayhatmini.button_x.when_held = lambda: os.system("sudo shutdown -h now")
         self.displayhatmini.button_y.when_held = lambda: os.system("sudo reboot now")
 
