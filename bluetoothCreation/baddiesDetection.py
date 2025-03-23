@@ -50,7 +50,7 @@ class BaddiesDetectionService(Service):
         self.add_characteristic(GenericCharacteristic(self, "00000002-210e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Lead"))
         self.add_characteristic(GenericCharacteristic(self, "00000002-310e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Cadmium"))
         self.add_characteristic(GenericCharacteristic(self, "00000002-410e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Mercury"))
-        self.add_characteristic(GenericCharacteristic(self, "00000002-510e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Nitrite"))
+        self.add_characteristic(GenericCharacteristic(self, "00000002-510e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Phosphate"))
         self.add_characteristic(GenericCharacteristic(self, "00000002-610e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "Nitrate"))
         self.add_characteristic(GenericCharacteristic(self, "00000002-710e-4a5b-8d75-3e5b444bc3cf", ["notify", "read"], "2901", "ChangeKey"))
         

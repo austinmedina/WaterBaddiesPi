@@ -36,7 +36,7 @@ def load_and_preprocess_image(image_path):
 def paperfluidic_concentration(reference_image_path, input_image_path,
                                region_radius=5):
     color_changes = {"Mercury": 0, "Lead": 0, "Cadmium": 0,
-                     "Nitrate": 0, "Nitrite": 0}
+                     "Nitrate": 0, "Phosphate": 0}
     key_list = list(color_changes.keys())
     reservoir_coords = [(350, 450), (1020, 250),
                         (1410, 800), (1010, 1370), (340, 1170)]

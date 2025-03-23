@@ -378,14 +378,14 @@ class System:
             else:
                 print("Nitrate characteristic not found")
 
-            nitriteChar = self.getCharacteristic("Nitrite")
-            if (nitriteChar):
-                nitriteChar.WriteValue(str(concentration["Nitrite"]))
-                print("Updated value:"+ str(concentration["Nitrite"]))
+            phosphateChar = self.getCharacteristic("Phosphate")
+            if (phosphateChar):
+                phosphateChar.WriteValue(str(concentration["Phosphate"]))
+                print("Updated value:"+ str(concentration["Phosphate"]))
                 
                 self.updateKey(key)
             else:
-                print("Nitrite characteristic not found")
+                print("Phosphate characteristic not found")
             
             self.display.updateQueue({"stage":"Resetting the paperfludics conveyor belt"})
             self.resetConveyorBelt(self.firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit2.stepper1)
