@@ -351,9 +351,9 @@ class System:
             else:
                 print("Lead characteristic not found")
 
-            arsenicChar = self.getCharacteristic("Mercury")
-            if (arsenicChar):
-                arsenicChar.WriteValue(str(concentration["Mercury"]))
+            mercuryChar = self.getCharacteristic("Mercury")
+            if (mercuryChar):
+                mercuryChar.WriteValue(str(concentration["Mercury"]))
                 print("Updated value:"+ str(concentration["Mercury"]))
                 
                 self.updateKey(key)
