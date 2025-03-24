@@ -1,0 +1,21 @@
+from adafruit_motorkit import MotorKit
+from adafruit_motor import stepper
+import time
+
+def test_kit1():
+    kit = MotorKit()
+    run_stepper(kit.stepper1)
+    time.sleep(0.5)
+    run_stepper(kit.stepper2)
+
+def test_kit2():
+    kit2 = MotorKit(address=0x61)
+    run_stepper(kit2.stepper1)
+    time.sleep(0.5)
+    run_stepper(kit2.stepper2)
+
+def run_stepper(stepper_motor, cm, direction=stepper.FORWARD, style=stepper.SINGLE):
+    steps = cm * 31
+    for i in range(steps):
+        stepper_motor.onestep(direction=direction, style=style)
+        time.sleep(0.01)
