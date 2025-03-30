@@ -60,6 +60,11 @@ class DisplayHat():
 
         self.messageThread = threading.Thread(target=self.updateText, daemon=True)
         self.messageThread.start()
+        
+        self.button_a_held = False
+        self.button_b_held = False
+        self.button_x_held = False
+        self.button_y_held = False
 
     def toggle_dark(self):
         self.switch = not self.switch  # Toggle between 1 and -1
@@ -130,19 +135,67 @@ class DisplayHat():
 
     # Function to keep listening for button events
     def button_listener(self):
-        #Need check to make sure multiple processes arent being run at the same time. Cant run all and microplastics at the same timme
-        self.displayhatmini.button_a.when_pressed = print("Microplastics pressed")
-        self.displayhatmini.button_b.when_pressed = print("Paperfluidics pressed")
-        self.displayhatmini.button_x.when_pressed = print("Bluetooth Restart pressed")
-        self.displayhatmini.button_y.when_pressed = print("All start pressed")
+    # Assign the functions to button events
+        self.displayhatmini.button_a.when_released = self.on_button_a_pressed
+        self.displayhatmini.button_b.when_released = self.on_button_b_pressed
+        self.displayhatmini.button_x.when_released = self.on_button_x_pressed
+        self.displayhatmini.button_y.when_released = self.on_button_y_pressed
         
-        self.displayhatmini.button_a.when_held = print("Button A hold")
-        self.displayhatmini.button_b.when_held = print("Button B hold")
-        self.displayhatmini.button_x.when_held = print("Button X hold")
-        self.displayhatmini.button_y.when_held = print("Button Y hold")
+        self.displayhatmini.button_a.when_held = self.on_button_a_held
+        self.displayhatmini.button_b.when_held = self.on_button_b_held
+        self.displayhatmini.button_x.when_held = self.on_button_x_held
+        self.displayhatmini.button_y.when_held = self.on_button_y_held
 
     def destroy(self):
         Device.close()
+        
+    def on_button_a_pressed(self):
+        if not self.button_a_held:
+            self.button_a_held = False
+            print("Microplastics pressed")
+            
+        self.button_a_held = False
+
+    def on_button_b_pressed(self):
+        # Only trigger if not already pressed
+        if not self.button_b_held:
+            self.button_b_held = False
+            print("Paperfluidics pressed")
+            
+        self.button_b_held = False
+
+    def on_button_x_pressed(self):
+        if not self.button_x_held:
+            self.button_x_held = False
+            print("Bluetooth Restart pressed")
+            
+        self.button_x_held = False      
+
+    def on_button_y_pressed(self):
+        if not self.button_y_held:
+            self.button_y_held = False
+            print("All start pressed")
+            
+        self.button_y_held = False      
+
+    def on_button_a_held(self):
+        print("Button A hold")
+        self.button_a_held = True
+
+    def on_button_b_held(self):
+        print("Button B hold")
+        self.button_b_held = True
+
+    def on_button_x_held(self):
+        print("Button X hold")
+        self.button_x_held = True
+
+    def on_button_y_held(self):
+        print("Button Y hold")
+        self.button_y_held = True  
 
 if __name__ == "__main__":
     display = DisplayHat()
+    
+    while True:
+        continue
