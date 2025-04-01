@@ -254,14 +254,15 @@ class System:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
-        
+        finally:
+            self.display.plasticActive = False
 
     def capturePiImage(self):
         led = LED(21)
         led.on()
         time.sleep(0.5)
         picam = Picamera2()
-        picam.configure(picam.create_still_configuration()) # Add this line
+        picam.configure(picam.create_still_configuration())
         picam.start()
         picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
         path = f'paperFluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
@@ -418,6 +419,8 @@ class System:
                 self.display.updateQueue({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
+        finally:
+            self.display.paperActive = False
         
     def startMicroplasticDetection(self):
         self.display.updateQueue({"stage":"Initiating Microplastic Detection"})

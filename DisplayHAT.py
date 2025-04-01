@@ -61,6 +61,14 @@ class DisplayHat():
         self.messageThread = threading.Thread(target=self.updateText, daemon=True)
         self.messageThread.start()
 
+        self.button_a_held = False
+        self.button_b_held = False
+        self.button_x_held = False
+        self.button_y_held = False
+
+        self.plasticActive = False
+        self.paperActive = False
+
     def toggle_dark(self):
         self.switch = not self.switch  # Toggle between 1 and -1
         if self.switch == False:
@@ -130,16 +138,85 @@ class DisplayHat():
 
     # Function to keep listening for button events
     def button_listener(self, microplastics, paperfluidics, allStart, bluetoothReset, destroy=None):
-        #Need check to make sure multiple processes arent being run at the same time. Cant run all and microplastics at the same timme
-        self.displayhatmini.button_a.when_pressed = microplastics
-        self.displayhatmini.button_b.when_pressed = paperfluidics
-        self.displayhatmini.button_x.when_pressed = bluetoothReset
-        self.displayhatmini.button_y.when_pressed = allStart
+        self.displayhatmini.button_a.when_released = self.on_button_a_pressed(microplastics)
+        self.displayhatmini.button_b.when_released = self.on_button_b_pressed(paperfluidics)
+        self.displayhatmini.button_x.when_released = self.on_button_x_pressed(allStart, microplastics, paperfluidics)
+        self.displayhatmini.button_y.when_released = self.on_button_y_pressed(bluetoothReset)
         
-        self.displayhatmini.button_a.when_held = None #Previously arsenic
-        self.displayhatmini.button_b.when_held = self.toggle_dark()
-        self.displayhatmini.button_x.when_held = lambda: os.system("sudo shutdown -h now")
-        self.displayhatmini.button_y.when_held = lambda: os.system("sudo reboot now")
+        self.displayhatmini.button_a.when_held = self.on_button_a_held
+        self.displayhatmini.button_b.when_held = self.on_button_b_held
+        self.displayhatmini.button_x.when_held = self.on_button_x_held
+        self.displayhatmini.button_y.when_held = self.on_button_y_held
+
+    def on_button_a_pressed(self, microplastics):
+        if not self.button_a_held:
+            if (not self.plasticActive):
+                self.button_a_held = False
+                print("Microplastics pressed")
+                self.plasticActive = True
+                microplastics()
+            else:
+                self.updateQueue({'warning': 'Cannot Start Microplastic As Its Currently Running'})
+            
+        self.button_a_held = False
+
+    def on_button_b_pressed(self, paperfluidics):
+        if not self.button_b_held:
+            if (not self.paperActive):
+                self.button_b_held = False
+                print("Paperfluidics pressed")
+                self.paperActive = True
+                paperfluidics()
+            else:
+                self.updateQueue({'warning': 'Cannot Start Paperfluidics As Its Currently Running'})
+            
+        self.button_b_held = False
+
+    def on_button_x_pressed(self, allStart, microplastics, paperfluidics):
+        if not self.button_x_held:
+            self.button_x_held = False
+            print("All Start pressed")
+            if (not self.paperActive and not self.plasticActive):
+                self.paperActive = True
+                self.plasticActive = True
+                allStart()  
+            elif (self.paperActive and not self.plasticActive):
+                self.plasticActive = True
+                microplastics()
+            elif (not self.paperActive and self.plasticActive):
+                self.paperActive = True
+                paperfluidics()
+            else:
+                self.updateQueue({'warning': 'Both Paperfluidics and Microplastics already running'})
+            
+        self.button_x_held = False 
+
+    def on_button_y_pressed(self, bluetoothReset):
+        if not self.button_y_held:
+            self.button_y_held = False
+            print("Bluetooth pressed")
+            bluetoothReset()
+            
+        self.button_y_held = False     
+
+    def on_button_a_held(self):
+        print("Button A hold")
+        self.button_a_held = True
+
+    def on_button_b_held(self):
+        print("Button B hold")
+        self.button_b_held = True
+        self.toggle_dark()
+
+    def on_button_x_held(self):
+        print("Button X hold")
+        self.button_x_held = True
+        os.system("sudo shutdown -h now")
+
+    def on_button_y_held(self):
+        print("Button Y hold")
+        self.button_y_held = True
+        os.system("sudo reboot now")
 
     def destroy(self):
         Device.close()
