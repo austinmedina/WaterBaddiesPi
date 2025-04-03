@@ -49,18 +49,6 @@ class DisplayHat():
         self.warning = ""
         self.messageQueue = Queue()
         
-        # Timer and batch state
-        self.counterStep = 0
-        
-        self.counter_thread = threading.Thread(target=self.counter, daemon=True)
-        self.counter_thread.start()
-        # Run the button listener in a separate thread
-        self.button_thread = threading.Thread(target=self.button_listener, args=(startMicroplasticDetection, startInorganicsMetalDetection, startAll, restartBluetooth, None), daemon=True)
-        self.button_thread.start()
-
-        self.messageThread = threading.Thread(target=self.updateText, daemon=True)
-        self.messageThread.start()
-
         self.button_a_held = False
         self.button_b_held = False
         self.button_x_held = False
@@ -68,6 +56,21 @@ class DisplayHat():
 
         self.plasticActive = False
         self.paperActive = False
+        
+        self.microplasticFunction = startMicroplasticDetection
+        self.paperfluidicFunction = startInorganicsMetalDetection
+        self.allStart = startAll
+        self.bluetoothRestart = restartBluetooth
+        
+        # Timer and batch state
+        self.counterStep = 0
+        
+        # Run the button listener in a separate thread
+        self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
+        self.button_thread.start()
+
+        self.messageThread = threading.Thread(target=self.updateText, daemon=True)
+        self.messageThread.start()
 
     def toggle_dark(self):
         self.switch = not self.switch  # Toggle between 1 and -1
@@ -88,7 +91,7 @@ class DisplayHat():
     # ------------------ GUI Display Functions ------------------
     def update_display(self):
         """Redraws the screen with updated values."""
-
+        print("Updating screen")
         self.draw = ImageDraw.Draw(self.buffer)  # Create drawing interface
         self.draw.rectangle((0, 0, self.width, self.height), fill=self.mode_background)  # Clear screen
 
@@ -109,93 +112,90 @@ class DisplayHat():
         self.draw.text((self.width - 60, self.height - 40), f"{percent}%", font=self.font, fill=self.mode_percentage)
 
         # Display the updated screen
-        self.displayhatmini.display()
-
-
-    def counter(self):
-        """Updates the timer every second."""
-        self.counterStep
-        while True:
-            self.counterStep += 1
-            self.update_display()
-            time.sleep(1)
+        self.displayhatmini.display()        
 
     def updateText(self):
         while True:
             try:
-                texts = self.messageQueue.get()
+                print("Here 1")
+                texts = self.messageQueue.get(block=False)
+                print("Here 2")
                 if ("stage" in texts):
                     self.stage = texts["stage"]
                 if ("warning" in texts):
                     self.warning = texts["warning"]
-                time.sleep(3)
-                self.update_display()
+                print("Here 3")
             except:
                 pass
+            finally:
+                print("Here 4")
+                self.counterStep += 1
+                self.update_display()
+                time.sleep(1)
 
     def updateQueue(self, text):
         self.messageQueue.put(text)
 
     # Function to keep listening for button events
-    def button_listener(self, microplastics, paperfluidics, allStart, bluetoothReset, destroy=None):
-        self.displayhatmini.button_a.when_released = self.on_button_a_pressed(microplastics)
-        self.displayhatmini.button_b.when_released = self.on_button_b_pressed(paperfluidics)
-        self.displayhatmini.button_x.when_released = self.on_button_x_pressed(allStart, microplastics, paperfluidics)
-        self.displayhatmini.button_y.when_released = self.on_button_y_pressed(bluetoothReset)
+    def button_listener(self):
+        self.displayhatmini.button_a.when_released = self.on_button_a_pressed
+        self.displayhatmini.button_b.when_released = self.on_button_b_pressed
+        self.displayhatmini.button_x.when_released = self.on_button_x_pressed
+        self.displayhatmini.button_y.when_released = self.on_button_y_pressed
         
         self.displayhatmini.button_a.when_held = self.on_button_a_held
         self.displayhatmini.button_b.when_held = self.on_button_b_held
         self.displayhatmini.button_x.when_held = self.on_button_x_held
         self.displayhatmini.button_y.when_held = self.on_button_y_held
 
-    def on_button_a_pressed(self, microplastics):
+    def on_button_a_pressed(self):
         if not self.button_a_held:
             if (not self.plasticActive):
                 self.button_a_held = False
                 print("Microplastics pressed")
                 self.plasticActive = True
-                microplastics()
+                self.microplasticFunction()
             else:
                 self.updateQueue({'warning': 'Cannot Start Microplastic As Its Currently Running'})
             
         self.button_a_held = False
 
-    def on_button_b_pressed(self, paperfluidics):
+    def on_button_b_pressed(self):
         if not self.button_b_held:
             if (not self.paperActive):
                 self.button_b_held = False
                 print("Paperfluidics pressed")
                 self.paperActive = True
-                paperfluidics()
+                self.paperfluidicFunction()
             else:
                 self.updateQueue({'warning': 'Cannot Start Paperfluidics As Its Currently Running'})
             
         self.button_b_held = False
 
-    def on_button_x_pressed(self, allStart, microplastics, paperfluidics):
+    def on_button_x_pressed(self):
         if not self.button_x_held:
             self.button_x_held = False
             print("All Start pressed")
             if (not self.paperActive and not self.plasticActive):
                 self.paperActive = True
                 self.plasticActive = True
-                allStart()  
+                self.allStart()  
             elif (self.paperActive and not self.plasticActive):
                 self.plasticActive = True
-                microplastics()
+                self.microplasticFunction()
             elif (not self.paperActive and self.plasticActive):
                 self.paperActive = True
-                paperfluidics()
+                self.paperfluidicFunction()
             else:
                 self.updateQueue({'warning': 'Both Paperfluidics and Microplastics already running'})
             
         self.button_x_held = False 
 
-    def on_button_y_pressed(self, bluetoothReset):
+    def on_button_y_pressed(self):
         if not self.button_y_held:
             self.button_y_held = False
             print("Bluetooth pressed")
-            bluetoothReset()
+            self.bluetoothRestart()
             
         self.button_y_held = False     
 
@@ -211,12 +211,12 @@ class DisplayHat():
     def on_button_x_held(self):
         print("Button X hold")
         self.button_x_held = True
-        os.system("sudo shutdown -h now")
+        #os.system("sudo shutdown -h now")
 
     def on_button_y_held(self):
         print("Button Y hold")
         self.button_y_held = True
-        os.system("sudo reboot now")
+        #os.system("sudo reboot now")
 
     def destroy(self):
         Device.close()

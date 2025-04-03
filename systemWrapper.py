@@ -15,7 +15,7 @@ from breakpointSensor import IRSensor
 from adafruit_motorkit import MotorKit
 from adafruit_motor import stepper
 from gpiozero import LED
-from gpizero import Button
+from gpiozero import Button
 
 import paperfluidic_analysis as pfa
 from microscope_analysis import microplastic_concentration
@@ -62,9 +62,6 @@ class System:
         self.loop = None
         self.kit = MotorKit()
         self.kit2 = MotorKit(address=0x61)
-        self.firstIR = IRSensor(26) #This will be removed
-        self.dropperIR = IRSensor(20)
-        self.microscopeIR = IRSensor(12)
         self.cm_step = 31
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth)
@@ -439,6 +436,7 @@ class System:
         mpThread = threading.Thread(target=self.microplasticDetection, args=(key,))
         mpThread.start()
         mpThread.join()
+        time.sleep(10)
 
     def startInorganicsMetalDetection(self):
         self.display.updateQueue({"stage":"Initiating Inorganics Metal Detection"})
@@ -447,6 +445,7 @@ class System:
         pfThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
         pfThread.start()
         pfThread.join()
+        time.sleep(10)
 
     def startDetection(self):
         self.display.updateQueue({"stage":"Initiating All Detections in Parallel"})
