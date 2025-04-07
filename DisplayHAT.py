@@ -117,18 +117,14 @@ class DisplayHat():
     def updateText(self):
         while True:
             try:
-                print("Here 1")
                 texts = self.messageQueue.get(block=False)
-                print("Here 2")
                 if ("stage" in texts):
                     self.stage = texts["stage"]
                 if ("warning" in texts):
                     self.warning = texts["warning"]
-                print("Here 3")
             except:
                 pass
             finally:
-                print("Here 4")
                 self.counterStep += 1
                 self.update_display()
                 time.sleep(1)

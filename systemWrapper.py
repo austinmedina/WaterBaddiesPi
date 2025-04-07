@@ -1,4 +1,4 @@
-from bluetoothCreation.baddiesDetection import BaddiesAdvertisement, BaddiesDetectionService
+from bluetoothCreation.baddiesDetection import BaddiesAdvertisement, BaddiesDetectionService, BluetoothAgent
 from bluetoothCreation.tools.bletools import BleTools
 from bluetoothCreation.tools.service import Application, GATT_DESC_IFACE
 import dbus
@@ -21,6 +21,8 @@ import paperfluidic_analysis as pfa
 from microscope_analysis import microplastic_concentration
 
 from DisplayHAT import DisplayHat
+
+AGENT_PATH = "/com/example/agent"
 
 class SlideNotDetectedError(Exception):
     """Exception raised when a cartridge is not detected"""
@@ -70,6 +72,14 @@ class System:
 
         BleTools.power_adapter(self.bus)
         BleTools.setDiscoverable(self.bus, 1)
+        
+        self.agent = BluetoothAgent(self.bus, AGENT_PATH)
+        agent_manager = dbus.Interface(
+            self.bus.get_object("org.bluez", "/org/bluez"),
+            "org.bluez.AgentManager1"
+        )
+        agent_manager.RegisterAgent(AGENT_PATH, "NoInputNoOutput")
+        agent_manager.RequestDefaultAgent(AGENT_PATH)
 
         #Create bluetooth application
         self.app = Application()

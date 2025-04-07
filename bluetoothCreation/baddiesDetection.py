@@ -110,6 +110,26 @@ class GenericDescriptor(Descriptor):
 
         return value
     
+class BluetoothAgent(dbus.service.Object):
+    def __init__(self, bus, path):
+        super().__init__(bus, path)
+
+    @dbus.service.method("org.bluez.Agent1", in_signature="o", out_signature="s")
+    def RequestPinCode(self, device):
+        return "0000"
+
+    @dbus.service.method("org.bluez.Agent1", in_signature="ou", out_signature="")
+    def RequestConfirmation(self, device, passkey):
+        return
+
+    @dbus.service.method("org.bluez.Agent1", in_signature="os", out_signature="")
+    def AuthorizeService(self, device, uuid):
+        return
+
+    @dbus.service.method("org.bluez.Agent1", in_signature="", out_signature="")
+    def Cancel(self):
+        print("Pairing canceled")
+    
 if __name__ == "__main__":
     
     #Initialize the D-Bus main loop
