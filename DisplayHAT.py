@@ -90,29 +90,57 @@ class DisplayHat():
 
     # ------------------ GUI Display Functions ------------------
     def update_display(self):
-        """Redraws the screen with updated values."""
-        print("Updating screen")
-        self.draw = ImageDraw.Draw(self.buffer)  # Create drawing interface
-        self.draw.rectangle((0, 0, self.width, self.height), fill=self.mode_background)  # Clear screen
+        """Redraws the screen with updated, modern layout."""
+        self.draw = ImageDraw.Draw(self.buffer)
+        self.draw.rectangle((0, 0, self.width, self.height), fill=self.mode_background)
 
-        # Timer
-        currentCounter = time.strftime("%H:%M:%S", time.gmtime(self.counterStep))
-        self.draw.text((10, 10), f"Timer: {currentCounter}", font=self.font, fill=self.mode_timer)
+        # Section dimensions
+        header_height = 40
+        footer_height = 40
+        middle_top = header_height
+        middle_bottom = self.height - footer_height
+        mid_width = self.width // 2
 
-        # Current Stage
+        # Header Section: Timer
+        header_bg = getattr(self, 'mode_header', self.mode_background)
+        self.draw.rectangle((0, 0, self.width, header_height), fill=header_bg)
+        current_time = time.strftime("%H:%M:%S", time.gmtime(self.counterStep))
+        self.draw.text((10, 10), f"Timer: {current_time}", font=self.font, fill=self.mode_timer)
+
+        # Middle Left: Stage Info
+        stage_bg = getattr(self, 'mode_stage_bg', self.mode_background)
+        self.draw.rectangle((0, middle_top, mid_width, middle_bottom), fill=stage_bg)
         stage_text = f"Stage:\n{self.stage}" if self.stage else "Stage:\nNot Started"
-        self.draw.text((10, 50), stage_text, font=self.font, fill=self.mode_colorFont)
+        self.draw.text((10, middle_top + 10), stage_text, font=self.font, fill=self.mode_colorFont)
 
-        # Warning Message
+        # Middle Right: Warning Message
+        warning_bg = getattr(self, 'mode_warning_bg', self.mode_background)
+        self.draw.rectangle((mid_width, middle_top, self.width, middle_bottom), fill=warning_bg)
         warning_text = f"Warning:\n{self.warning}" if self.warning else "Warning:\nNone"
-        self.draw.text((10, 150), warning_text, font=self.font, fill=self.mode_warning)
+        self.draw.text((mid_width + 10, middle_top + 10), warning_text, font=self.font, fill=self.mode_warning)
 
-        # Percent Completed
-        percent = int(78)
-        self.draw.text((self.width - 60, self.height - 40), f"{percent}%", font=self.font, fill=self.mode_percentage)
+        # Divider Lines
+        divider_color = getattr(self, 'mode_divider', self.mode_colorFont)
+        self.draw.line([(mid_width, middle_top), (mid_width, middle_bottom)], fill=divider_color, width=2)
+        self.draw.line([(0, header_height), (self.width, header_height)], fill=divider_color, width=2)
+        self.draw.line([(0, middle_bottom), (self.width, middle_bottom)], fill=divider_color, width=2)
 
-        # Display the updated screen
-        self.displayhatmini.display()        
+        # Footer Section: Progress Bar for Percent Completed
+        percent = 78  # Example percentage
+        bar_left, bar_right = 10, self.width - 10
+        bar_top, bar_bottom = self.height - footer_height + 10, self.height - 10
+        full_bar_width = bar_right - bar_left
+        progress_width = int(full_bar_width * (percent / 100))
+        self.draw.rectangle((bar_left, bar_top, bar_right, bar_bottom), outline=divider_color, width=2)
+        self.draw.rectangle((bar_left, bar_top, bar_left + progress_width, bar_bottom), fill=self.mode_percentage)
+        percent_text = f"{percent}%"
+        text_width, text_height = self.draw.textsize(percent_text, font=self.font)
+        text_x = (self.width - text_width) // 2
+        text_y = bar_top + ((bar_bottom - bar_top - text_height) // 2)
+        self.draw.text((text_x, text_y), percent_text, font=self.font, fill=self.mode_background)
+
+        self.displayhatmini.display()
+      
 
     def updateText(self):
         while True:
