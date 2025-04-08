@@ -32,9 +32,9 @@ def test_plastic_motor_breakpoint():
     resetConveyorBelt(firstIR, "Resetting conveyor belt", kit2.stepper1)
 
 def run_stepper(stepper_motor, steps, direction=stepper.FORWARD, style=stepper.SINGLE):
-        for i in range(steps):
-            stepper_motor.onestep(direction=direction, style=style)
-            time.sleep(0.01)
+    for i in range(steps):
+        stepper_motor.onestep(direction=direction, style=style)
+        time.sleep(0.01)
 
 def resetConveyorBelt(ir, message, motor):
     print(message)
