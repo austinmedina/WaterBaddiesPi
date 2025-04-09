@@ -10,6 +10,7 @@ import time
 
 from picamera2 import Picamera2
 from libcamera import controls
+import cv2
 
 from breakpointSensor import IRSensor
 from adafruit_motorkit import MotorKit
