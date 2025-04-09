@@ -4,19 +4,20 @@ import time
 
 def test_kit1():
     kit = MotorKit()
-    #run_stepper(kit.stepper1)
-    time.sleep(0.5)
-    #run_stepper(kit.stepper2)
+    run_stepper(kit.stepper1)
+#     time.sleep(0.5)
+#     run_stepper(kit.stepper2)
     kit.stepper1.release()
-    kit.stepper2.release()
+#     kit.stepper2.release()
+    run_stepper(kit.stepper1)
 
-def test_kit2():
-    kit2 = MotorKit(address=0x61)
-    run_stepper(kit2.stepper1)
-    time.sleep(0.5)
-    run_stepper(kit2.stepper2, 1000)
-    kit2.stepper1.release()
-    kit2.stepper2.release()
+# def test_kit2():
+#     kit2 = MotorKit(address=0x61)
+#     run_stepper(kit2.stepper1)
+#     time.sleep(0.5)
+#     run_stepper(kit2.stepper2, 1000)
+#     kit2.stepper1.release()
+#     kit2.stepper2.release()
 
 def run_stepper(stepper_motor, cm=31, direction=stepper.FORWARD, style=stepper.DOUBLE):
     steps = cm * 10
