@@ -64,6 +64,7 @@ class System:
         self.loop = None
         self.kit = MotorKit()
         self.kit2 = MotorKit(address=0x61)
+        self.releaseMotors()
         self.cm_step = 31
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth)
@@ -105,6 +106,12 @@ class System:
         self.adv.unregister()
         self.app.quit()
         self.startBluetooth()
+        
+    def releaseMotors(self):
+        self.kit.stepper1.release()
+        self.kit.stepper2.release()
+        self.kit2.stepper1.release()
+        self.kit2.stepper2.release()
     
     def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.SINGLE):
         for i in range(steps):
@@ -119,6 +126,8 @@ class System:
             self.run_stepper(motor, self.cm_step * 10)
             detected = ir.is_object_detected()
             detected = True
+        
+        self.releaseMotors()
 
     def moveConveyorToSensor(self, targetIR, startIR, message, motor):
         print(message)
@@ -132,6 +141,7 @@ class System:
             if (startDetected):
                 self.display.updateQueue({"warning":"Conveyor belt not supposed to be at start but is"})
                 raise ConveyorGoAroundError("Conveyor belt at the start, although its not supposed to be.")
+        self.releaseMotors()
     
     def dispensePlasticWater(self):
         self.display.updateQueue({"stage":"Dispensing water"})
@@ -140,7 +150,7 @@ class System:
         return
     
     def captureMicroscopeImage(self):
-        led = LED(19) #Blue spectrum LED
+        led = LED(35) #Blue spectrum LED
         led.on()
         cap = cv2.VideoCapture(8)
         if not cap.isOpened():
@@ -182,11 +192,14 @@ class System:
 
     def microplasticDetection(self, key):
         try:
-            firstIR = IRSensor(26)
-            dropperIR = IRSensor(20)
-            microscopeIR = IRSensor(12)
+            self.display.updatePercentage(1)
+            firstIR = IRSensor(12)
+            dropperIR = IRSensor(26)
+            microscopeIR = IRSensor(20)
+            self.display.updatePercentage(2)
             self.display.updateQueue({"stage":"Resetting microplastic conveyor belt"})
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
+            self.display.updatePercentage(7)
             time.sleep(2)
             sum = 0
             for i in range(1):
@@ -264,6 +277,7 @@ class System:
             return
         finally:
             self.display.plasticActive = False
+            self.releaseMotors()
 
     def capturePiImage(self):
         led = LED(40)
@@ -360,14 +374,14 @@ class System:
             else:
                 print("Lead characteristic not found")
 
-            mercuryChar = self.getCharacteristic("Mercury")
-            if (mercuryChar):
-                mercuryChar.WriteValue(str(concentration["Mercury"]))
-                print("Updated value:"+ str(concentration["Mercury"]))
+            nitriteChar = self.getCharacteristic("Nitrite")
+            if (nitriteChar):
+                nitriteChar.WriteValue(str(concentration["Nitrite"]))
+                print("Updated value:"+ str(concentration["Nitrite"]))
                 
                 self.updateKey(key)
             else:
-                print("Mercury characteristic not found")
+                print("Nitrite characteristic not found")
 
             cadmiumChar = self.getCharacteristic("Cadmium")
             if (cadmiumChar):
@@ -429,6 +443,7 @@ class System:
             return
         finally:
             self.display.paperActive = False
+            self.releaseMotors()
     
     def isDoorClosed():
         try:

@@ -28,7 +28,7 @@ class DisplayHat():
         self.displayhatmini = DisplayHATMini(self.buffer)
         self.displayhatmini.set_led(0.05, 0.05, 0.05)
 
-        self.font = ImageFont.load_default()
+        self.font = ImageFont.truetype('/usr/share/fonts/truetype/piboto/Piboto-Bold.ttf', 16)
 
         # Set up button hold actions (3-second hold time)
         self.displayhatmini.button_a.hold_time = 3  # Hold for 3 seconds before shutdown
@@ -64,6 +64,7 @@ class DisplayHat():
         
         # Timer and batch state
         self.counterStep = 0
+        self.percent = 0
         
         # Run the button listener in a separate thread
         self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
@@ -90,7 +91,24 @@ class DisplayHat():
 
     # ------------------ GUI Display Functions ------------------
     def update_display(self):
-        """Redraws the screen with updated, modern layout."""
+        """Redraws the screen with updated, modern layout and wrapped text."""
+        def wrap_text(text, font, max_width, draw):
+            words = text.split()
+            lines = []
+            current_line = ""
+            for word in words:
+                test_line = current_line + (" " if current_line else "") + word
+                bbox = draw.textbbox((0, 0), test_line, font=font)
+                if (bbox[2] - bbox[0]) <= max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = word
+            if current_line:
+                lines.append(current_line)
+            return lines
+
         self.draw = ImageDraw.Draw(self.buffer)
         self.draw.rectangle((0, 0, self.width, self.height), fill=self.mode_background)
 
@@ -100,24 +118,39 @@ class DisplayHat():
         middle_top = header_height
         middle_bottom = self.height - footer_height
         mid_width = self.width // 2
+        margin = 10
 
         # Header Section: Timer
         header_bg = getattr(self, 'mode_header', self.mode_background)
         self.draw.rectangle((0, 0, self.width, header_height), fill=header_bg)
         current_time = time.strftime("%H:%M:%S", time.gmtime(self.counterStep))
-        self.draw.text((10, 10), f"Timer: {current_time}", font=self.font, fill=self.mode_timer)
+        self.draw.text((margin, 10), f"Timer: {current_time}", font=self.font, fill=self.mode_timer)
 
-        # Middle Left: Stage Info
+        # Middle Left: Stage Info with wrapped text
         stage_bg = getattr(self, 'mode_stage_bg', self.mode_background)
         self.draw.rectangle((0, middle_top, mid_width, middle_bottom), fill=stage_bg)
-        stage_text = f"Stage:\n{self.stage}" if self.stage else "Stage:\nNot Started"
-        self.draw.text((10, middle_top + 10), stage_text, font=self.font, fill=self.mode_colorFont)
+        stage_infopercentage = f"Stage: {self.stage}" if self.stage else "Stage: Not Started"
+        max_text_width = mid_width - (2 * margin)
+        stage_lines = wrap_text(stage_info, self.font, max_text_width, self.draw)
+        y_offset = middle_top + margin
+        for line in stage_lines:
+            self.draw.text((margin, y_offset), line, font=self.font, fill=self.mode_colorFont)
+            bbox = self.draw.textbbox((0, 0), line, font=self.font)
+            line_height = bbox[3] - bbox[1]
+            y_offset += line_height + 2
 
-        # Middle Right: Warning Message
+        # Middle Right: Warning Message with wrapped text
         warning_bg = getattr(self, 'mode_warning_bg', self.mode_background)
         self.draw.rectangle((mid_width, middle_top, self.width, middle_bottom), fill=warning_bg)
-        warning_text = f"Warning:\n{self.warning}" if self.warning else "Warning:\nNone"
-        self.draw.text((mid_width + 10, middle_top + 10), warning_text, font=self.font, fill=self.mode_warning)
+        warning_msg = f"Warning: {self.warning}" if self.warning else "Warning: None"
+        max_text_width = (self.width - mid_width) - (2 * margin)
+        warning_lines = wrap_text(warning_msg, self.font, max_text_width, self.draw)
+        y_offset = middle_top + margin
+        for line in warning_lines:
+            self.draw.text((mid_width + margin, y_offset), line, font=self.font, fill=self.mode_warning)
+            bbox = self.draw.textbbox((0, 0), line, font=self.font)
+            line_height = bbox[3] - bbox[1]
+            y_offset += line_height + 2
 
         # Divider Lines
         divider_color = getattr(self, 'mode_divider', self.mode_colorFont)
@@ -126,21 +159,22 @@ class DisplayHat():
         self.draw.line([(0, middle_bottom), (self.width, middle_bottom)], fill=divider_color, width=2)
 
         # Footer Section: Progress Bar for Percent Completed
-        percent = 78  # Example percentage
-        bar_left, bar_right = 10, self.width - 10
-        bar_top, bar_bottom = self.height - footer_height + 10, self.height - 10
+        bar_left, bar_right = margin, self.width - margin
+        bar_top, bar_bottom = self.height - footer_height + margin, self.height - margin
         full_bar_width = bar_right - bar_left
         progress_width = int(full_bar_width * (percent / 100))
         self.draw.rectangle((bar_left, bar_top, bar_right, bar_bottom), outline=divider_color, width=2)
         self.draw.rectangle((bar_left, bar_top, bar_left + progress_width, bar_bottom), fill=self.mode_percentage)
-        percent_text = f"{percent}%"
-        text_width, text_height = self.draw.textsize(percent_text, font=self.font)
+        percent_text = f"{self.percent}%"
+        bbox = self.draw.textbbox((0, 0), percent_text, font=self.font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         text_x = (self.width - text_width) // 2
         text_y = bar_top + ((bar_bottom - bar_top - text_height) // 2)
         self.draw.text((text_x, text_y), percent_text, font=self.font, fill=self.mode_background)
 
         self.displayhatmini.display()
-      
+
 
     def updateText(self):
         while True:
@@ -155,10 +189,13 @@ class DisplayHat():
             finally:
                 self.counterStep += 1
                 self.update_display()
-                time.sleep(1)
+                time.sleep(2)
 
     def updateQueue(self, text):
         self.messageQueue.put(text)
+    
+    def updatePercentage(self, perc):
+        self.percent = perc
 
     # Function to keep listening for button events
     def button_listener(self):
