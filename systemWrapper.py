@@ -150,7 +150,7 @@ class System:
         return
     
     def captureMicroscopeImage(self):
-        led = LED(35) #Blue spectrum LED
+        led = LED(19) #Blue spectrum LED
         led.on()
         cap = cv2.VideoCapture(8)
         if not cap.isOpened():
@@ -280,7 +280,7 @@ class System:
             self.releaseMotors()
 
     def capturePiImage(self):
-        led = LED(40)
+        led = LED(21)
         led.on()
         time.sleep(0.5)
         picam = Picamera2()
