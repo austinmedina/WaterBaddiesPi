@@ -19,7 +19,7 @@ from displayhatmini import DisplayHATMini
 # Initialize Display HAT Mini
 class DisplayHat():
     
-    def __init__(self, startMicroplasticDetection, startInorganicsMetalDetection, startAll, restartBluetooth):
+    def __init__(self, startMicroplasticDetection, startInorganicsMetalDetection, startAll, restartBluetooth, demo):
         self.width = DisplayHATMini.WIDTH
         self.height = DisplayHATMini.HEIGHT
         self.buffer = Image.new("RGB", (self.width, self.height))
@@ -61,6 +61,7 @@ class DisplayHat():
         self.paperfluidicFunction = startInorganicsMetalDetection
         self.allStart = startAll
         self.bluetoothRestart = restartBluetooth
+        self.demo = demo
         
         # Timer and batch state
         self.counterStep = 0
@@ -129,7 +130,7 @@ class DisplayHat():
         # Middle Left: Stage Info with wrapped text
         stage_bg = getattr(self, 'mode_stage_bg', self.mode_background)
         self.draw.rectangle((0, middle_top, mid_width, middle_bottom), fill=stage_bg)
-        stage_infopercentage = f"Stage: {self.stage}" if self.stage else "Stage: Not Started"
+        stage_info = f"Stage: {self.stage}" if self.stage else "Stage: Not Started"
         max_text_width = mid_width - (2 * margin)
         stage_lines = wrap_text(stage_info, self.font, max_text_width, self.draw)
         y_offset = middle_top + margin
@@ -162,7 +163,7 @@ class DisplayHat():
         bar_left, bar_right = margin, self.width - margin
         bar_top, bar_bottom = self.height - footer_height + margin, self.height - margin
         full_bar_width = bar_right - bar_left
-        progress_width = int(full_bar_width * (percent / 100))
+        progress_width = int(full_bar_width * (self.percent / 100))
         self.draw.rectangle((bar_left, bar_top, bar_right, bar_bottom), outline=divider_color, width=2)
         self.draw.rectangle((bar_left, bar_top, bar_left + progress_width, bar_bottom), fill=self.mode_percentage)
         percent_text = f"{self.percent}%"
@@ -199,12 +200,12 @@ class DisplayHat():
 
     # Function to keep listening for button events
     def button_listener(self):
-        self.displayhatmini.button_a.when_released = self.on_button_a_pressed
-        self.displayhatmini.button_b.when_released = self.on_button_b_pressed
-        self.displayhatmini.button_x.when_released = self.on_button_x_pressed
-        self.displayhatmini.button_y.when_released = self.on_button_y_pressed
+        self.displayhatmini.button_a.when_released = self.on_button_a_pressed #Microplastics
+        self.displayhatmini.button_b.when_released = self.on_button_b_pressed #Paperfluidics
+        self.displayhatmini.button_x.when_released = self.on_button_x_pressed #All Start
+        self.displayhatmini.button_y.when_released = self.on_button_y_pressed #Demo
         
-        self.displayhatmini.button_a.when_held = self.on_button_a_held
+        self.displayhatmini.button_a.when_held = self.on_button_a_held 
         self.displayhatmini.button_b.when_held = self.on_button_b_held
         self.displayhatmini.button_x.when_held = self.on_button_x_held
         self.displayhatmini.button_y.when_held = self.on_button_y_held
@@ -255,8 +256,8 @@ class DisplayHat():
     def on_button_y_pressed(self):
         if not self.button_y_held:
             self.button_y_held = False
-            print("Bluetooth pressed")
-            self.bluetoothRestart()
+            print("Demo pressed")
+            self.demo
             
         self.button_y_held = False     
 
@@ -277,7 +278,7 @@ class DisplayHat():
     def on_button_y_held(self):
         print("Button Y hold")
         self.button_y_held = True
-        #os.system("sudo reboot now")
+        self.bluetoothRestart()
 
     def destroy(self):
         Device.close()

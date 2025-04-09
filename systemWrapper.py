@@ -67,7 +67,7 @@ class System:
         self.releaseMotors()
         self.cm_step = 31
         self.startBluetooth()
-        self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth)
+        self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
 
     def startBluetooth(self):
 
@@ -199,23 +199,37 @@ class System:
             self.display.updatePercentage(2)
             self.display.updateQueue({"stage":"Resetting microplastic conveyor belt"})
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
-            self.display.updatePercentage(7)
+            self.display.updatePercentage(10)
             time.sleep(2)
             sum = 0
+            loop_counter = 0
+            percent_increase = 75 / (5 * 5) #(starting percentage - ending) / (Stages per loop * loops)
+
             for i in range(1):
                 print("Starting microplastic slide" + str(i+1))
                 self.display.updateQueue({"stage":"Fetching microplastic slide and moving slide under dropper"})
                 self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1)
+                loop_counter += 1
+                new_pct = 10 + round(loop_counter * percent_increase)
+                self.display.updatePercentage(int(new_pct))
                 time.sleep(2)
                 self.dispensePlasticWater()
+                loop_counter += 1
+                new_pct = 10 + round(loop_counter * percent_increase)
+                self.display.updatePercentage(int(new_pct))
                 time.sleep(2)
                 self.display.updateQueue({"stage":"Moving microplastic slide under microscope"})
                 self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit.stepper1)
+                loop_counter += 1
+                new_pct = 10 + round(loop_counter * percent_increase)
+                self.display.updatePercentage(int(new_pct))
                 time.sleep(2)
                 try:
                     #imagePath = self.captureMicroscopeImage()
                     #print(f"Microplastic image path: {imagePath}")
-                    print("Hello")
+                    loop_counter += 1
+                    new_pct = 10 + round(loop_counter * percent_increase)
+                    self.display.updatePercentage(int(new_pct))
                 except Exception as e:
                     self.display.updateQueue({"warning":f"Error during image capture: {e}"})
                     print(f"Error during image capture: {e}")
@@ -225,6 +239,9 @@ class System:
                     testImagePath = "./test_images/Snap_027.jpg"
                     quantity = microplastic_concentration(testImagePath)
                     #quantity = microplastic_concentration(imagePath)
+                    loop_counter += 1
+                    new_pct = 10 + round(loop_counter * percent_increase)
+                    self.display.updatePercentage(int(new_pct))
                 except Exception as e:
                     self.display.updateQueue({"warning":f"Error during image analysis: {e}"})
                     print(f"Error during image analysis: {e}")
@@ -240,11 +257,13 @@ class System:
                 print("Updated value:"+ str(concentration))
                 
                 self.updateKey(key)
+                self.display.updatePercentage(95)
             else:
                 print("Microplastic characteristic not found")
 
             self.display.updateQueue({"stage": "Bluetooth Uploaded.  Resetting conveyor belt"})
             self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
+            self.display.updatePercentage(100)
             
             self.display.updateQueue({"stage": "Microplastic Detection Finished"})
         except Exception as e:
@@ -301,149 +320,227 @@ class System:
                 
     def InorganicsMetalDetection(self, key):
         try:
+            self.display.updatePercentage(1)
             firstIR = IRSensor(14)
             dropperIR = IRSensor(18)
             microscopeIR = IRSensor(23)
-            self.display.updateQueue({"stage":"Resetting paperfluidic conveyor belt"})
+            self.display.updateQueue({"stage": "Resetting paperfluidic conveyor belt"})
             self.resetConveyorBelt(firstIR, "Resetting paperfluidic conveyor belt", self.kit2.stepper1)
+            self.display.updatePercentage(5)
             time.sleep(2)
-            self.display.updateQueue({"stage":"Fetching paperfluidics and moving the slide under the water dropper"})
+
+            self.display.updateQueue({"stage": "Fetching paperfluidics and moving the slide under the water dropper"})
             self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper", self.kit2.stepper1)
+            self.display.updatePercentage(10)
             time.sleep(2)
+
             self.dispenseFluidicWater()
+            self.display.updatePercentage(20)
             time.sleep(2)
-            self.display.updateQueue({"stage":"Moving paperluidics under the camera"})
+
+            self.display.updateQueue({"stage": "Moving paperluidics under the camera"})
             self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the camera", self.kit2.stepper1)
+            self.display.updatePercentage(30)
+
             try:
                 imagePath = self.capturePiImage()
                 print(f"First paperfluidics image: {imagePath}")
-                self.display.updateQueue({"stage":"Waiting for lead reaction"})
+                self.display.updateQueue({"stage": "Waiting for lead reaction"})
+                self.display.updatePercentage(32.5)
                 print("Waiting for lead reaction")
                 time.sleep(3)
-                leadImagePath = self.capturePiImage() #Just capture lead image
+                leadImagePath = self.capturePiImage()  # Just capture lead image
+                self.display.updatePercentage(37.5)
                 print(f"Lead paperfluidics image: {leadImagePath}")
 
-                #Just for testing
+                # Just for testing
                 testImagePath = "./test_images/paperfluidic.jpg"
                 testLeadImagePath = "./test_images/paperfluidic_test.jpg"
             except Exception as e:
-                    self.display.updateQueue({"warning":f"Error during image capture: {e}"})
-                    print(f"Error during image capture: {e}")
-                    raise ImageCaptureError("Error during capturing image from the PiCamera for lead or base image. Canceling paperfluidics job!")
-            
+                self.display.updateQueue({"warning": f"Error during image capture: {e}"})
+                print(f"Error during image capture: {e}")
+                raise ImageCaptureError("Error during capturing image from the PiCamera for lead or base image. Canceling paperfluidics job!")
+
             try:
-                #leadConcentration = paperfluidic_concentration(imagePath, leadImagePath)['lead']
-                self.display.updateQueue({"stage":"Starting Lead Concentration Analysis"})
+                self.display.updateQueue({"stage": "Starting Lead Concentration Analysis"})
                 print("Starting Lead Concentration Analysis")
                 vals = pfa.paperfluidic_concentration(testImagePath, testLeadImagePath)
                 leadConcentration = vals['Lead']
+                self.display.updatePercentage(45)
             except Exception as e:
-                self.display.updateQueue({"warning":f"Error during image analysis: {e}"})
+                self.display.updateQueue({"warning": f"Error during image analysis: {e}"})
                 print(f"Error during image analysis: {e}")
                 raise ImageCaptureError("Error analyzing lead image. Canceling paperfluidics job!")
-            
-            self.display.updateQueue({"stage":"Waiting for paperfluidic reactions"})
+
+            self.display.updateQueue({"stage": "Waiting for paperfluidic reactions"})
             print("Waiting for paperfluidic reactions")
             time.sleep(5)
+            self.display.updatePercentage(50)
 
             try:
                 finalImagePath = self.capturePiImage()
                 print(f"Final paperfluidics image: {finalImagePath}")
-                
                 testFinalImagePath = "./test_images/paperfluidic_test.jpg"
+                self.display.updatePercentage(60)
             except Exception as e:
-                self.display.updateQueue({"warning":f"Error during image capture: {e}"})
+                self.display.updateQueue({"warning": f"Error during image capture: {e}"})
                 print(f"Error during image capture: {e}")
                 raise ImageCaptureError("Error during capturing final image from the PiCamera. Canceling paperfluidics job!")
-            
+
             try:
-                #concentration = paperfluidic_concentration(imagePath, finalImagePath)
                 concentration = pfa.paperfluidic_concentration(testImagePath, testFinalImagePath)
                 concentration['Lead'] = leadConcentration
+                self.display.updatePercentage(70)
             except Exception as e:
-                self.display.updateQueue({"warning":f"Error during image capture: {e}"})
+                self.display.updateQueue({"warning": f"Error during image capture: {e}"})
                 print(f"Error during image capture: {e}")
                 raise ImageCaptureError("Error during capturing image from the PiCamera. Canceling paperfluidics job!")
 
             leadChar = self.getCharacteristic("Lead")
-            if (leadChar):
+            if leadChar:
                 leadChar.WriteValue(str(concentration["Lead"]))
-                print("Updated value:"+ str(concentration["Lead"]))
-                
+                print("Updated value:" + str(concentration["Lead"]))
                 self.updateKey(key)
+                self.display.updatePercentage(75)
             else:
                 print("Lead characteristic not found")
 
             nitriteChar = self.getCharacteristic("Nitrite")
-            if (nitriteChar):
+            if nitriteChar:
                 nitriteChar.WriteValue(str(concentration["Nitrite"]))
-                print("Updated value:"+ str(concentration["Nitrite"]))
-                
+                print("Updated value:" + str(concentration["Nitrite"]))
                 self.updateKey(key)
+                self.display.updatePercentage(80)
             else:
                 print("Nitrite characteristic not found")
 
             cadmiumChar = self.getCharacteristic("Cadmium")
-            if (cadmiumChar):
+            if cadmiumChar:
                 cadmiumChar.WriteValue(str(concentration["Cadmium"]))
-                print("Updated value:"+ str(concentration["Cadmium"]))
-                
+                print("Updated value:" + str(concentration["Cadmium"]))
                 self.updateKey(key)
+                self.display.updatePercentage(85)
             else:
                 print("Cadmium characteristic not found")
 
             nitrateChar = self.getCharacteristic("Nitrate")
-            if (nitrateChar):
+            if nitrateChar:
                 nitrateChar.WriteValue(str(concentration["Nitrate"]))
-                print("Updated value:"+ str(concentration["Nitrate"]))
-                
+                print("Updated value:" + str(concentration["Nitrate"]))
                 self.updateKey(key)
+                self.display.updatePercentage(90)
             else:
                 print("Nitrate characteristic not found")
 
             phosphateChar = self.getCharacteristic("Phosphate")
-            if (phosphateChar):
+            if phosphateChar:
                 phosphateChar.WriteValue(str(concentration["Phosphate"]))
-                print("Updated value:"+ str(concentration["Phosphate"]))
-                
+                print("Updated value:" + str(concentration["Phosphate"]))
                 self.updateKey(key)
+                self.display.updatePercentage(95)
             else:
                 print("Phosphate characteristic not found")
-            
-            self.display.updateQueue({"stage":"Resetting the paperfludics conveyor belt"})
+
+            self.display.updateQueue({"stage": "Resetting the paperfludics conveyor belt"})
             self.resetConveyorBelt(firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit2.stepper1)
+            self.display.updatePercentage(100)
 
             self.display.updateQueue({"stage": "Inorganics and Metal Detection Finished"})
         except Exception as e:
             print(f"Caught exception: {e}")
             try:
-                self.display.updateQueue({"warning":"Canceling paperfluidics and resetting conveyor belt"})
+                self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
                 self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
-                self.display.updateQueue({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
+                self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
         except ImageCaptureError as ie:
             print(f"Caught image capture exception: {ie}")
             try:
-                self.display.updateQueue({"warning":"Canceling paperfluidics and resetting conveyor belt"})
+                self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
                 self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
-                self.display.updateQueue({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
+                self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
         except ImageAnalysisError as ia:
             print(f"Caught image analysis exception: {ia}")
             try:
-                self.display.updateQueue({"warning":"Canceling paperfluidics and resetting conveyor belt"})
+                self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
                 self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
             except Exception as ee:
-                self.display.updateQueue({"warning":f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
+                self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
         finally:
             self.display.paperActive = False
             self.releaseMotors()
+
+    def demoSystem(self, key):
+        try:
+            self.display.updatePercentage(1)
+            firstIR = IRSensor(12)
+            dropperIR = IRSensor(26)
+            microscopeIR = IRSensor(20)
+            self.display.updatePercentage(5)
+            self.display.updateQueue({"stage": "Resetting demo conveyor belt"})
+            self.resetConveyorBelt(firstIR, "Resetting demo conveyor belt", self.kit.stepper1)
+            self.display.updatePercentage(10)
+            time.sleep(2)
+
+            loop_counter = 0
+            percent_increase = 65 / (3 * 5) #(starting percentage - ending) / (Stages per loop * loops)
+            for i in range(5):
+                print("Starting demo slide " + str(i + 1))
+                self.display.updateQueue({"stage": "Fetching demo slide and moving slide under dropper"})
+                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching demo slide and moving slide under dropper", self.kit.stepper1)
+                loop_counter += 1
+                new_pct = 10 + round(loop_counter * percent_increase)
+                self.display.updatePercentage(int(new_pct))
+                time.sleep(2)
+                self.dispensePlasticWater()
+                loop_counter += 1
+                new_pct = 10 + round(loop_counter * percent_increase)
+                self.display.updatePercentage(int(new_pct))
+                time.sleep(2)
+                self.display.updateQueue({"stage": "Moving demo slide under microscope"})
+                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving demo slide under microscope", self.kit.stepper1)
+                loop_counter += 1
+                new_pct = 10 + round(loop_counter * percent_increase)
+                self.display.updatePercentage(int(new_pct))
+                time.sleep(2)
+
+            concentration = 1.2
+            mpChar = self.getCharacteristic("Microplastic")
+            if mpChar:
+                mpChar.WriteValue(str(concentration))
+                print("Updated value:" + str(concentration))
+                self.updateKey(key)
+                self.display.updatePercentage(80)
+            else:
+                print("Microplastic characteristic not found")
+                self.display.updatePercentage(75)
+
+            self.display.updateQueue({"stage": "Bluetooth Uploaded.  Resetting conveyor belt"})
+            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
+            self.display.updatePercentage(90)
+            self.display.updateQueue({"stage": "demo Detection Finished"})
+            self.display.updatePercentage(100)
+        except Exception as e:
+            self.display.updateQueue({"warning": f"Error during image analysis: {e}"})
+            print(f"Caught exception: {e}")
+            try:
+                self.display.updateQueue({"stage": "Cancelling demo detection and discarding any active trays"})
+                self.resetConveyorBelt(firstIR, "Cancelling demo detection and discarding any active trays", self.kit.stepper1)
+            except Exception as ee:
+                self.display.updateQueue({"warning": f"Fatal error while canceling demo detection, after an error had already occured. FATAL ERROR: {ee}"})
+                print(f"Fatal error while canceling demo detection, after an error had already occured. FATAL ERROR: {ee}")
+            return
+        finally:
+            self.display.plasticActive = False
+            self.releaseMotors()
+
     
     def isDoorClosed():
         try:
@@ -452,6 +549,15 @@ class System:
         except Exception as e:
             print(f"Error checking door status: {e}")
             return None
+        
+    def startDemo(self):
+        self.display.updateQueue({"stage":"Initiating Demo Detection"})
+        print("Initiating Demo Detection")
+        key = datetime.now().strftime("%F %T.%f")[:-3]
+        demoThread = threading.Thread(target=self.demoSystem, args=(key,))
+        demoThread.start()
+        demoThread.join()
+        time.sleep(10)
 
         
     def startMicroplasticDetection(self):
@@ -461,7 +567,6 @@ class System:
         mpThread = threading.Thread(target=self.microplasticDetection, args=(key,))
         mpThread.start()
         mpThread.join()
-        time.sleep(10)
 
     def startInorganicsMetalDetection(self):
         self.display.updateQueue({"stage":"Initiating Inorganics Metal Detection"})
@@ -470,7 +575,6 @@ class System:
         pfThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
         pfThread.start()
         pfThread.join()
-        time.sleep(10)
 
     def startDetection(self):
         self.display.updateQueue({"stage":"Initiating All Detections in Parallel"})
