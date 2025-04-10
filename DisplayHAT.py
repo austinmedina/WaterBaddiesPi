@@ -200,12 +200,13 @@ class DisplayHat():
 
     # Function to keep listening for button events
     def button_listener(self):
-        self.displayhatmini.button_a.when_released = self.on_button_a_pressed #Microplastics
-        self.displayhatmini.button_b.when_released = self.on_button_b_pressed #Paperfluidics
-        self.displayhatmini.button_x.when_released = self.on_button_x_pressed #All Start
-        self.displayhatmini.button_y.when_released = self.on_button_y_pressed #Demo
+    # Assign the functions to button events
+        self.displayhatmini.button_a.when_released = self.on_button_a_pressed
+        self.displayhatmini.button_b.when_released = self.on_button_b_pressed
+        self.displayhatmini.button_x.when_released = self.on_button_x_pressed
+        self.displayhatmini.button_y.when_released = self.on_button_y_pressed
         
-        self.displayhatmini.button_a.when_held = self.on_button_a_held 
+        self.displayhatmini.button_a.when_held = self.on_button_a_held
         self.displayhatmini.button_b.when_held = self.on_button_b_held
         self.displayhatmini.button_x.when_held = self.on_button_x_held
         self.displayhatmini.button_y.when_held = self.on_button_y_held

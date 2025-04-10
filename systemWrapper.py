@@ -124,7 +124,7 @@ class System:
         detected = ir.is_object_detected()
         while (not detected):
 #             print("Moving Conveyor Belt")
-            self.run_stepper(motor, self.cm_step * 10)
+            self.run_stepper(motor, self.cm_step * 5)
             detected = ir.is_object_detected()
             detected = True
         
@@ -147,7 +147,7 @@ class System:
     def dispensePlasticWater(self):
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
-        self.run_stepper(self.kit.stepper2, (self.cm_step * 8))
+        self.run_stepper(self.kit.stepper2, (self.cm_step * 6))
         return
     
     def captureMicroscopeImage(self):
@@ -316,7 +316,7 @@ class System:
     def dispenseFluidicWater(self):
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
-        self.run_stepper(self.kit2.stepper2, (self.cm_step * 8))
+        self.run_stepper(self.kit2.stepper2, (self.cm_step * 6))
         return
                 
     def InorganicsMetalDetection(self, key):
