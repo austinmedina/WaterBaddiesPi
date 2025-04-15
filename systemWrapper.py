@@ -125,7 +125,7 @@ class System:
         self.kit2.stepper1.release()
         self.kit2.stepper2.release()
     
-    def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.SINGLE):
+    def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
         for i in range(steps):
             stepper_motor.onestep(direction=direction, style=style)
             time.sleep(0.01)
@@ -215,7 +215,7 @@ class System:
             loop_counter = 0
             percent_increase = 75 / (5 * 5) #(starting percentage - ending) / (Stages per loop * loops)
 
-            for i in range(1):
+            for i in range(5):
                 print("Starting microplastic slide" + str(i+1))
                 self.display.updateQueue({"stage":"Fetching microplastic slide and moving slide under dropper"})
                 self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1, True)
@@ -308,7 +308,7 @@ class System:
             self.display.plasticActive = False
             self.releaseMotors()
             
-    def capture_image_with_timeout(self, picam, path, timeout=10):
+    def capture_image_with_timeout(self, picam, path, timeout=20):
         def _capture():
             try:
                 picam.capture_file(path)
@@ -509,7 +509,7 @@ class System:
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
-                self.capturePiImage()
+#                 self.capturePiImage()
                 time.sleep(2)
 
             concentration = 1.2
