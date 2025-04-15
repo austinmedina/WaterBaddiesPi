@@ -56,6 +56,7 @@ class DisplayHat():
 
         self.plasticActive = False
         self.paperActive = False
+        self.demoActive = False
         
         self.microplasticFunction = startMicroplasticDetection
         self.paperfluidicFunction = startInorganicsMetalDetection
@@ -258,7 +259,11 @@ class DisplayHat():
         if not self.button_y_held:
             self.button_y_held = False
             print("Demo pressed")
-            self.demo
+            if (not self.demoActive):
+                self.demoActive = True
+                self.demo()
+            else:
+                self.updateQueue({'warning': 'Demo already running'})
             
         self.button_y_held = False     
 
