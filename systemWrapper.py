@@ -127,8 +127,15 @@ class System:
     
     def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
         for i in range(steps):
-            stepper_motor.onestep(direction=direction, style=style)
-            time.sleep(0.01)
+            if (self.isPaperDoorClosed() and self.isPaperDoorClosed()):
+                stepper_motor.onestep(direction=direction, style=style)
+                time.sleep(0.01)
+            else:
+                closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
+                self.display.updateQueue({"warning":"CLOSE DOORS"})
+                while (not closed):
+                    closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
+
 
     def resetConveyorBelt(self, ir, message, motor):
         print(message)
@@ -177,7 +184,7 @@ class System:
         
         path = f'plasticImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         cv2.imwrite(path, frame)
-        self.paperLED.off()
+        self.paperLED.off() 
         return path
 
     def getCharacteristic(self, charName):
@@ -389,7 +396,7 @@ class System:
             try:
                 self.display.updateQueue({"stage": "Starting Lead Concentration Analysis"})
                 print("Starting Concentration Analysis")
-                vals = pfa.paperfluidic_concentration(testImagePath)
+                concentration = pfa.paperfluidic_concentration(testImagePath)
                 self.display.updatePercentage(45)
             except Exception as e:
                 self.display.updateQueue({"warning": f"Error during image analysis: {e}"})
@@ -491,9 +498,10 @@ class System:
             self.display.updatePercentage(10)
             time.sleep(2)
 
+            numLoops = 1
             loop_counter = 0
-            percent_increase = 65 / (3 * 1) #(starting percentage - ending) / (Stages per loop * loops)
-            for i in range(1):
+            percent_increase = 65 / (3 * numLoops) #(starting percentage - ending) / (Stages per loop * loops)
+            for i in range(numLoops):
                 print("Starting demo slide " + str(i + 1))
                 self.display.updateQueue({"stage": "Fetching demo slide and moving slide under dropper"})
                 self.moveConveyorToSensor(dropperIR, firstIR, "Fetching demo slide and moving slide under dropper", self.kit.stepper1, True)
@@ -542,7 +550,14 @@ class System:
             self.display.demoActive = False
             self.releaseMotors()
     
-    def isDoorClosed(self):
+    def isPlasticDoorClosed(self):
+        try:
+            button = Button(4)
+            return button.is_pressed
+        except Exception as e:
+            print(f"Error checking door status: {e}")
+        
+    def isPaperDoorClosed(self):
         try:
             button = Button(4)
             return button.is_pressed
