@@ -34,7 +34,7 @@ def test_with_leds():
     picam.close()
 
     led.off()
-
+    print(path)
     assert os.path.exists(path), f"File {path} was not created"
 
 if __name__=="__main__":
