@@ -34,7 +34,7 @@ The WaterBaddiesPi repository contains everything needed to deploy the Water Bad
 - Image analysis for microplastics and colorimetric assays  
 - Robust error handling and automatic restart
 
-   ![WaterBaddies System Diagram](April 2025 Software Architecture Diagram.png)
+   ![WaterBaddies System Diagram](/April 2025 Software Architecture Diagram.png)
 ---
 
 ## Prerequisites
