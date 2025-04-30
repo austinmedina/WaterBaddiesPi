@@ -85,15 +85,7 @@ Ensure any default assignments on GPIO 0, 1, and 8 are disabled as shown above.
 
 ### Python Virtual Environment
 
-Create and activate a venv inside your project directory:
-```bash
-cd ~/waterBaddies
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-> **Note:** The `venv/` directory is included in this repo to lock in specific library versions across Pis.
+The `wbe/` directory is the virtual enviroment for the Water Baddies Detection System. We included the virtual enviroment because we had to modify some of the contents of the packages due to them being outdated. The library for the Display Hat Mini is the main one we modified so be aware when ubdatig through pip that the library may be overwritten.
 
 ---
 
