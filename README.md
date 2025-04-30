@@ -1,60 +1,188 @@
 # WaterBaddiesPi
-Welcome to the Embedded Code for the Water Baddies Detection System!
 
-The following repository includes everything you need to have quickly get the Water Baddies Detection System running
+A Raspberry Pi–based embedded application for the Water Baddies Detection System, providing automated sensing, actuation, display, and Bluetooth communication.
 
-When setting up the raspberry pi for use there are a couple of specific things you must do. Some libraries will need to be installed on the pi using apt in order to use the dbus library. You will also have the modify the file boot/firmware/config.txt to free up gpio 0, 1, and 8 using the following:
-~insert text here
+---
 
-The main application for the Water Baddies Detection System is the systemWrapper.py. This file contains a class called system which handles all of the GPIO communication with motors, IRSensors, buttons, and leds. The class also handles initializing the display, initializes the bluetooth and processing bluetooth communication, and handles any errors that occur during running of the system.
+## Table of Contents
 
-The systemWrapper.py is run whenver the raspberry pi initially starts up. We use a service called waterBaddies.service to do this. To create the service run:
+1. [Overview](#overview)  
+2. [Prerequisites](#prerequisites)  
+3. [Hardware Configuration](#hardware-configuration)  
+4. [Software Setup](#software-setup)  
+   - [Install System Dependencies](#install-system-dependencies)  
+   - [GPIO Pin Configuration](#gpio-pin-configuration)  
+   - [Python Virtual Environment](#python-virtual-environment)  
+5. [Systemd Service](#systemd-service)  
+   - [Create the Service Unit](#create-the-service-unit)  
+   - [Enable and Manage the Service](#enable-and-manage-the-service)  
+6. [Usage](#usage)  
+7. [Repository Structure](#repository-structure)  
+8. [Testing](#testing)  
+9. [Contributing](#contributing)  
+10. [License](#license)  
+
+---
+
+## Overview
+
+The WaterBaddiesPi repository contains everything needed to deploy the Water Baddies Detection System on a Raspberry Pi. It handles:
+
+- GPIO control of motors, IR breakbeam sensors, buttons, and LEDs  
+- Display initialization and screen updates  
+- Bluetooth GATT service and communication  
+- Image analysis for microplastics and colorimetric assays  
+- Robust error handling and automatic restart  
+
+---
+
+## Prerequisites
+
+- **Hardware**: Raspberry Pi 3/4/5 with camera, IR sensors, motors, buttons, LEDs, and Display HAT  
+- **OS**: Raspberry Pi OS (32-bit or 64-bit)  
+- **Network**: Internet access for package installation  
+
+---
+
+## Hardware Configuration
+
+Ensure the following GPIO pins are freed up on your Pi:
+
+1. **GPIO 0 & GPIO 1**  
+2. **GPIO 8**  
+
+Edit `/boot/firmware/config.txt` and add the following lines (each code fence must be on its own lines):
+
+```ini
+# Disable Bluetooth to free GPIO0 & GPIO1
+dtoverlay=disable-bt
+
+# Turn off SPI to free GPIO8 if not used by other peripherals
+dtparam=spi=off
+```
+
+Reboot the Pi for changes to take effect:
+
+```bash
+sudo reboot
+```
+
+---
+
+## Software Setup
+
+### Install System Dependencies
+
+```bash
+sudo apt update
+sudo apt install -y python3-venv python3-pip libdbus-1-dev
+```
+
+### GPIO Pin Configuration
+
+Ensure any default assignments on GPIO 0, 1, and 8 are disabled as shown above.
+
+### Python Virtual Environment
+
+Create and activate a venv inside your project directory:
+```bash
+cd ~/waterBaddies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+> **Note:** The `venv/` directory is included in this repo to lock in specific library versions across Pis.
+
+---
+
+## systemd Service
+
+We use a systemd service to launch the application at boot.
+
+### Create the Service Unit
+
+```bash
 sudo nano /etc/systemd/system/waterBaddies.service
+```
 
-Then add the following to the contents of the waterBaddies.service file:
+Paste the following:
+```ini
 [Unit]
-Description=Water Baddies Service
-After=network.target  # Start after the network is up
+Description=Water Baddies Detection Service
+After=network.target
 
 [Service]
-User=pi  # Run as the 'pi' user (or your desired user)
+User=pi
 Group=pi
-WorkingDirectory=/home/pi/waterBaddies  # Set the working directory
+WorkingDirectory=/home/pi/waterBaddies
 ExecStart=/bin/bash -c "source /home/pi/waterBaddies/venv/bin/activate && python3 /home/pi/waterBaddies/systemWrapper.py"
-#  * /bin/bash -c:  Execute a shell command
-#  * source /home/pi/waterBaddies/venv/bin/activate: Activate the virtual environment.
-#  * && :  And then...
-#  * python3 /home/pi/waterBaddies/systemWrapper.py:  Run your Python script.
-Restart=on-failure  # Restart the service if it crashes
-RestartSec=5  # Wait 5 seconds before restarting
+Restart=on-failure
+RestartSec=5
 
 [Install]
-WantedBy=multi-user.target  # Start at boot-up
+WantedBy=multi-user.target
+```
 
-Make it executable: chmod +x /home/pi/waterBaddies/systemWrapper.py
+Make the main script executable:
+```bash
+chmod +x ~/waterBaddies/systemWrapper.py
+```
 
-Finally enable the service:
+### Enable and Manage the Service
+
+```bash
+sudo systemctl daemon-reload
 sudo systemctl enable waterBaddies.service
+sudo systemctl start  waterBaddies.service
+```
 
-Here are some quick commands for dealing with the service:
-To start: sudo systmctl start waterBaddies.service
-To Stop: sudo systemctl stop waterBaddies.service
-To Check Status: sudo systemctl status waterBaddies.service
+- **Start:** `sudo systemctl start  waterBaddies.service`  
+- **Stop:**  `sudo systemctl stop   waterBaddies.service`  
+- **Status:**`sudo systemctl status waterBaddies.service`  
 
-Important files:
-systemWrapper.py: This is the main logic for the entire system and handles all of the logic for the system
-DisplayHAT.py: Includes the initiliation fo the display, along with utility functions, button handling, and the logic to draw on the screen
-breakpointSensor.py: Includes a class called IRSensor which is a used for the IRBreaksensors and includes a function to check if an object is detected
-microscope_analysis.py: Includes the image analysis functions for finding floresced microplastics 
-paperfluidics_analysis.py: Includes the image analysis for getting the color change of the test pads and mapping the color values to conecntrations
-bluetoothCreation/baddiesDetection.py: Creates the GATT Bluetooth service for the Raspberry Pi, creates the advertisement for the service, and provides utility functions used in the system wrapper to update values and restart the service
-wbe: This is the virtual enviroment the system runs on. We have included it in the repository because we have had to change some of the libraries due to them being outdated. So to allow for easy movement between raspberry pi's we have included the virtual envroment here.
+---
 
-Tests:
-findMicroscope.py: Loops through all available ports to find the correct index the microscope is on
-microscopeTest.py: Connects to the microscope, takes a photo, saves it, and asserts the file was saved
-testBreakpoint.py: Checks each IRSensor to see if an object is detected. If the system was built correctly all IRSensors should return false
-test_doorButtons.py: A while loops that will print true or false as the door buttons are pressed
-test_motor_breakpoint.py: Will run the motors in the secquence they are fired in the actual system. Runs each motor until the desired breakpoint sensor is hit, meaning the cartirdge will be in the correct place for the water dropper or the camera.
-tests/test_picamera.py: Takes a photo using the picamera when the LED is turned on and saved the image.
-tests/test_motor.py: Will fire each motor sequentially
+## Usage
+
+Once the service is running, the Pi will:
+
+1. Initialize GPIO interfaces (motors, sensors, LEDs)  
+2. Bring up the Display HAT UI  
+3. Advertise and handle Bluetooth GATT requests  
+4. Listen for input from the Display and then run motors, check sensors, and analyze images as necessary 
+
+---
+
+## Repository Structure
+
+```
+.
+├── bluetoothCreation/
+│   └── baddiesDetection.py   # GATT service & advertisement
+├── DisplayHAT.py             # Display init, drawing & button handlers
+├── breakpointSensor.py       # IRSensor class for breakbeam detection
+├── microscope_analysis.py    # Microplastics fluorescence analysis
+├── paperfluidics_analysis.py # Colorimetric assay processing
+├── systemWrapper.py          # Main application logic & error handling
+├── venv/                     # Included Python virtual environment
+└── requirements.txt          # Python dependencies
+```
+
+---
+
+## Testing
+
+- **findMicroscope.py**: Auto-detect camera index  
+- **microscopeTest.py**: Capture & verify an image  
+- **testBreakpoint.py**: Validate each IRSensor output  
+- **test_doorButtons.py**: Monitor door button presses  
+- **test_motor_breakpoint.py**: Cycle motors to their breakpoints  
+- **tests/test_picamera.py**: LED-triggered picamera capture  
+- **tests/test_motor.py**: Sequential motor activation  
+
+Run tests inside the venv:
+```bash
+source venv/bin/activate
+python or pytest
+```
