@@ -32,8 +32,9 @@ The WaterBaddiesPi repository contains everything needed to deploy the Water Bad
 - Display initialization and screen updates  
 - Bluetooth GATT service and communication  
 - Image analysis for microplastics and colorimetric assays  
-- Robust error handling and automatic restart  
+- Robust error handling and automatic restart
 
+   ![WaterBaddies System Diagram](images/diagram.png)
 ---
 
 ## Prerequisites
