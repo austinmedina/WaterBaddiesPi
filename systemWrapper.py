@@ -75,8 +75,14 @@ class System:
         self.PlasticDropperIR = IRSensor(26)
         self.PlsticMicroscopeIR = IRSensor(20)
         
+        self.plasticMotorIR = IRSensor(0)
+        self.paperMotorIR = IRSensor(1)
+        
         self.plasticLED = LED(19)
-        self.paperLED = LED(21)
+        self.paperLED = LED(8)
+        self.paperLED.off()
+        
+        self.motorSteps = 30
         
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
@@ -110,8 +116,7 @@ class System:
             self.loop = GLib.MainLoop()
             self.loop.run()
         except Exception as e:
-            print(f"Error in DBus main loop: {e}")
-            
+            print(f"Error in DBus main loop: {e}")     
 
     def restartBluetooth(self):
         BleTools.setDiscoverable(self.bus, 0)
@@ -135,7 +140,6 @@ class System:
                 self.display.updateQueue({"warning":"CLOSE DOORS"})
                 while (not closed):
                     closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
-
 
     def resetConveyorBelt(self, ir, message, motor):
         print(message)
@@ -164,7 +168,14 @@ class System:
     def dispensePlasticWater(self):
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
-        self.run_stepper(self.kit.stepper2, (90), stepper.BACKWARD)
+        canMove = self.plasticMotorIR.is_object_detected()
+        for i in range(self.motorSteps):
+            if (canMove):
+                self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
+                canMove = self.plasticMotorIR.is_object_detected()
+            else:
+                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+                break
         return
     
     def captureMicroscopeImage(self):
@@ -350,7 +361,14 @@ class System:
     def dispenseFluidicWater(self):
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
-        self.run_stepper(self.kit2.stepper2, (90), direction=stepper.BACKWARD)
+        canMove = self.paperMotorIR.is_object_detected()
+        for i in range(self.motorSteps):
+            if (canMove):
+                self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
+                canMove = self.paperMotorIR.is_object_detected()
+            else:
+                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+                break
         return
                 
     def InorganicsMetalDetection(self, key):
