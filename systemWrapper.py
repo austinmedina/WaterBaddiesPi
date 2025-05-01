@@ -67,16 +67,16 @@ class System:
         self.kit2 = MotorKit(address=0x61)
         self.releaseMotors()
         self.cm_step = 31
-        self.firstIR = IRSensor(23)
+        self.firstIR = IRSensor(14)
         self.dropperIR = IRSensor(18)
-        self.microscopeIR = IRSensor(14)
+        self.microscopeIR = IRSensor(23)
         
         self.PlasticFirstIR = IRSensor(12)
         self.PlasticDropperIR = IRSensor(26)
         self.PlsticMicroscopeIR = IRSensor(20)
         
-        self.plasticMotorIR = IRSensor(0)
-        self.paperMotorIR = IRSensor(1)
+#         self.plasticMotorIR = IRSensor(0)
+#         self.paperMotorIR = IRSensor(1)
         
         self.plasticLED = LED(19)
         self.paperLED = LED(8)
@@ -168,14 +168,17 @@ class System:
     def dispensePlasticWater(self):
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
-        canMove = self.plasticMotorIR.is_object_detected()
-        for i in range(self.motorSteps):
-            if (canMove):
-                self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
-                canMove = self.plasticMotorIR.is_object_detected()
-            else:
-                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
-                break
+#         canMove = self.plasticMotorIR.is_object_detected()
+#         for i in range(self.motorSteps):
+#             if (canMove):
+#                 self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
+#                 canMove = self.plasticMotorIR.is_object_detected()
+#             else:
+#                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+#                 break
+#         return
+    
+        self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
         return
     
     def captureMicroscopeImage(self):
@@ -361,14 +364,15 @@ class System:
     def dispenseFluidicWater(self):
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
-        canMove = self.paperMotorIR.is_object_detected()
-        for i in range(self.motorSteps):
-            if (canMove):
-                self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
-                canMove = self.paperMotorIR.is_object_detected()
-            else:
-                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
-                break
+#         canMove = self.paperMotorIR.is_object_detected()
+#         for i in range(self.motorSteps):
+#             if (canMove):
+#                 self.run_stepper(self.kit2.stepper2, (1), stepper.BACKWARD)
+#                 canMove = self.paperMotorIR.is_object_detected()
+#             else:
+#                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+#                 break
+        self.run_stepper(self.kit2.stepper2, (30), stepper.BACKWARD)
         return
                 
     def InorganicsMetalDetection(self, key):
