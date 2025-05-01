@@ -59,5 +59,5 @@ def test_dropperBreak_sensors():
     
 if __name__=="__main__":
     test_paper_sensors()
-    #test_plastic_sensors()
-    #test_dropperBreak_sensors()
+    test_plastic_sensors()
+    test_dropperBreak_sensors()
