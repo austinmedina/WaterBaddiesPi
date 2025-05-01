@@ -75,12 +75,10 @@ class System:
         self.PlasticDropperIR = IRSensor(26)
         self.PlsticMicroscopeIR = IRSensor(20)
         
-#         self.plasticMotorIR = IRSensor(0)
-#         self.paperMotorIR = IRSensor(1)
+        self.plasticMotorIR = IRSensor(0)
+        self.paperMotorIR = IRSensor(1)
         
         self.plasticLED = LED(19)
-        self.paperLED = LED(8)
-        self.paperLED.off()
         
         self.motorSteps = 30
         
@@ -168,21 +166,21 @@ class System:
     def dispensePlasticWater(self):
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
-#         canMove = self.plasticMotorIR.is_object_detected()
-#         for i in range(self.motorSteps):
-#             if (canMove):
-#                 self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
-#                 canMove = self.plasticMotorIR.is_object_detected()
-#             else:
-#                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
-#                 break
-#         return
-    
-        self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
+        canMove = self.plasticMotorIR.is_object_detected()
+        for i in range(self.motorSteps):
+            if (canMove):
+                self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
+                canMove = self.plasticMotorIR.is_object_detected()
+            else:
+                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+                break
         return
     
+#         self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
+#         return
+    
     def captureMicroscopeImage(self):
-        self.paperLED.on()
+        self.plasticLED.on()
         cap = cv2.VideoCapture(8)
         if not cap.isOpened():
             self.display.updateQueue({"warning":"Error opening video stream or file"})
@@ -198,7 +196,7 @@ class System:
         
         path = f'plasticImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         cv2.imwrite(path, frame)
-        self.paperLED.off() 
+        self.plasticLED.off() 
         return path
 
     def getCharacteristic(self, charName):
@@ -345,7 +343,6 @@ class System:
         return True
 
     def capturePiImage(self):
-        self.paperLED.on()
         time.sleep(1)
         picam = Picamera2()
         picam.configure(picam.create_still_configuration())
@@ -354,8 +351,6 @@ class System:
         path = f'paperFluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         success = self.capture_image_with_timeout(picam, path, timeout=5)
         picam.close()
-        self.paperLED.off()
-        print("LED off")
         if not success:
             raise RuntimeError("Camera capture timed out")
         return path
@@ -364,15 +359,15 @@ class System:
     def dispenseFluidicWater(self):
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
-#         canMove = self.paperMotorIR.is_object_detected()
-#         for i in range(self.motorSteps):
-#             if (canMove):
-#                 self.run_stepper(self.kit2.stepper2, (1), stepper.BACKWARD)
-#                 canMove = self.paperMotorIR.is_object_detected()
-#             else:
-#                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
-#                 break
-        self.run_stepper(self.kit2.stepper2, (30), stepper.BACKWARD)
+        canMove = self.paperMotorIR.is_object_detected()
+        for i in range(self.motorSteps):
+            if (canMove):
+                self.run_stepper(self.kit2.stepper2, (1), stepper.BACKWARD)
+                canMove = self.paperMotorIR.is_object_detected()
+            else:
+                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+                break
+#         self.run_stepper(self.kit2.stepper2, (30), stepper.BACKWARD)
         return
                 
     def InorganicsMetalDetection(self, key):
