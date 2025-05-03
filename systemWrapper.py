@@ -82,9 +82,6 @@ class System:
         
         self.motorSteps = 30
         
-        self.plasticMotorIR = IRSensor(0)
-        self.paperMotorIR = IRSensor(1)
-        
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
 
