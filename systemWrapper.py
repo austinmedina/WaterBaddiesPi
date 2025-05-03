@@ -67,16 +67,20 @@ class System:
         self.kit2 = MotorKit(address=0x61)
         self.releaseMotors()
         self.cm_step = 31
-        self.firstIR = IRSensor(23)
+        self.firstIR = IRSensor(14)
         self.dropperIR = IRSensor(18)
-        self.microscopeIR = IRSensor(14)
+        self.microscopeIR = IRSensor(23)
         
         self.PlasticFirstIR = IRSensor(12)
         self.PlasticDropperIR = IRSensor(26)
         self.PlasticMicroscopeIR = IRSensor(20)
         
+        self.plasticMotorIR = IRSensor(0)
+        self.paperMotorIR = IRSensor(1)
+        
         self.plasticLED = LED(19)
-        self.paperLED = LED(21)
+        
+        self.motorSteps = 30
         
         self.plasticMotorIR = IRSensor(0)
         self.paperMotorIR = IRSensor(1)
@@ -113,8 +117,7 @@ class System:
             self.loop = GLib.MainLoop()
             self.loop.run()
         except Exception as e:
-            print(f"Error in DBus main loop: {e}")
-            
+            print(f"Error in DBus main loop: {e}")     
 
     def restartBluetooth(self):
         BleTools.setDiscoverable(self.bus, 0)
@@ -138,7 +141,6 @@ class System:
                 self.display.updateQueue({"warning":"CLOSE DOORS"})
                 while (not closed):
                     closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
-
 
     def resetConveyorBelt(self, ir, message, motor):
         print(message)
@@ -167,11 +169,21 @@ class System:
     def dispensePlasticWater(self):
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
-        self.run_stepper(self.kit.stepper2, (90), stepper.BACKWARD)
+        canMove = self.plasticMotorIR.is_object_detected()
+        for i in range(self.motorSteps):
+            if (canMove):
+                self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
+                canMove = self.plasticMotorIR.is_object_detected()
+            else:
+                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+                break
         return
     
+#         self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
+#         return
+    
     def captureMicroscopeImage(self):
-        self.paperLED.on()
+        self.plasticLED.on()
         cap = cv2.VideoCapture(8)
         if not cap.isOpened():
             self.display.updateQueue({"warning":"Error opening video stream or file"})
@@ -187,7 +199,7 @@ class System:
         
         path = f'plasticImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         cv2.imwrite(path, frame)
-        self.paperLED.off() 
+        self.plasticLED.off() 
         return path
 
     def getCharacteristic(self, charName):
@@ -341,7 +353,6 @@ class System:
         return True
 
     def capturePiImage(self):
-        self.paperLED.on()
         time.sleep(1)
         picam = Picamera2()
         picam.configure(picam.create_still_configuration())
@@ -350,8 +361,6 @@ class System:
         path = f'paperFluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
         success = self.capture_image_with_timeout(picam, path, timeout=5)
         picam.close()
-        self.paperLED.off()
-        print("LED off")
         if not success:
             raise RuntimeError("Camera capture timed out")
         return path
@@ -360,7 +369,15 @@ class System:
     def dispenseFluidicWater(self):
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
-        self.run_stepper(self.kit2.stepper2, (90), direction=stepper.BACKWARD)
+        canMove = self.paperMotorIR.is_object_detected()
+        for i in range(self.motorSteps):
+            if (canMove):
+                self.run_stepper(self.kit2.stepper2, (1), stepper.BACKWARD)
+                canMove = self.paperMotorIR.is_object_detected()
+            else:
+                self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
+                break
+#         self.run_stepper(self.kit2.stepper2, (30), stepper.BACKWARD)
         return
     
     def isInorganicsSyringeEmpty(self):

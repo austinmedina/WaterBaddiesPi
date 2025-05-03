@@ -1,3 +1,4 @@
+import gpiozero
 from gpiozero import Button
 
 class IRSensor:
