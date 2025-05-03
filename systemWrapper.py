@@ -73,10 +73,13 @@ class System:
         
         self.PlasticFirstIR = IRSensor(12)
         self.PlasticDropperIR = IRSensor(26)
-        self.PlsticMicroscopeIR = IRSensor(20)
+        self.PlasticMicroscopeIR = IRSensor(20)
         
         self.plasticLED = LED(19)
         self.paperLED = LED(21)
+        
+        self.plasticMotorIR = IRSensor(0)
+        self.paperMotorIR = IRSensor(1)
         
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
@@ -206,13 +209,20 @@ class System:
             print("Updated Key")
         else:
             print("ChangeKey characteristic none")
+    
+    def isPlasticSyringeEmpty(self):
+        return not self.plasticMotorIR.is_object_detected()
 
     def microplasticDetection(self, key):
         try:
+            if (self.isPlasticSyringeEmpty()):
+                self.display.updateQueue({"warning": "Syringe is not full enough for a trial"})
+                raise Exception("Syringe is not full enough for a trial") 
+            
             self.display.updatePercentage(1)
             firstIR = self.PlasticFirstIR
             dropperIR = self.PlasticDropperIR
-            microscopeIR = self.PlsticMicroscopeIR
+            microscopeIR = self.PlasticMicroscopeIR
             self.display.updatePercentage(2)
             self.display.updateQueue({"stage":"Resetting microplastic conveyor belt"})
             self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
@@ -352,9 +362,16 @@ class System:
         print("Dispensing Paperfluidicswater")
         self.run_stepper(self.kit2.stepper2, (90), direction=stepper.BACKWARD)
         return
+    
+    def isInorganicsSyringeEmpty(self):
+        return not self.paperMotorIR.is_object_detected()
                 
     def InorganicsMetalDetection(self, key):
         try:
+            if (self.isInorganicsSyringeEmpty()):
+                self.display.updateQueue({"warning": "Syringe is not full enough for a trial"})
+                raise Exception("Syringe is not full enough for a trial")
+             
             self.display.updatePercentage(1)
             firstIR = self.firstIR
             dropperIR = self.dropperIRs
