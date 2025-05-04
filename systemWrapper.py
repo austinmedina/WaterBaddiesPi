@@ -128,7 +128,7 @@ class System:
         self.kit2.stepper1.release()
         self.kit2.stepper2.release()
     
-    def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
+    def run_stepper(self, stepper_motor, steps, direction=stepper.BACKWARD, style=stepper.DOUBLE):
         for i in range(steps):
             if (self.isPaperDoorClosed() and self.isPaperDoorClosed()):
                 stepper_motor.onestep(direction=direction, style=style)
@@ -169,7 +169,7 @@ class System:
         canMove = self.plasticMotorIR.is_object_detected()
         for i in range(self.motorSteps):
             if (canMove):
-                self.run_stepper(self.kit.stepper2, (1), stepper.BACKWARD)
+                self.run_stepper(self.kit2.stepper1, 1, stepper.FORWARD)
                 canMove = self.plasticMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
@@ -234,7 +234,7 @@ class System:
             microscopeIR = self.PlasticMicroscopeIR
             self.display.updatePercentage(2)
             self.display.updateQueue({"stage":"Resetting microplastic conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit2.stepper2)
             self.display.updatePercentage(10)
             time.sleep(2)
             sum = 0
@@ -244,7 +244,7 @@ class System:
             for i in range(5):
                 print("Starting microplastic slide" + str(i+1))
                 self.display.updateQueue({"stage":"Fetching microplastic slide and moving slide under dropper"})
-                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit.stepper1, True)
+                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit2.stepper2, True)
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
@@ -255,7 +255,7 @@ class System:
                 self.display.updatePercentage(int(new_pct))
                 time.sleep(2)
                 self.display.updateQueue({"stage":"Moving microplastic slide under microscope"})
-                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit.stepper1)
+                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit2.stepper2)
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
@@ -298,7 +298,7 @@ class System:
                 print("Microplastic characteristic not found")
 
             self.display.updateQueue({"stage": "Bluetooth Uploaded.  Resetting conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit2.stepper2)
             self.display.updatePercentage(100)
             
             self.display.updateQueue({"stage": "Microplastic Detection Finished"})
@@ -307,7 +307,7 @@ class System:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -316,7 +316,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -325,7 +325,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -369,7 +369,7 @@ class System:
         canMove = self.paperMotorIR.is_object_detected()
         for i in range(self.motorSteps):
             if (canMove):
-                self.run_stepper(self.kit2.stepper2, (1), stepper.BACKWARD)
+                self.run_stepper(self.kit.stepper1, 1, stepper.FORWARD)
                 canMove = self.paperMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
@@ -391,12 +391,12 @@ class System:
             dropperIR = self.dropperIRs
             microscopeIR = self.microscopeIR
             self.display.updateQueue({"stage": "Resetting paperfluidic conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting paperfluidic conveyor belt", self.kit2.stepper1)
+            self.resetConveyorBelt(firstIR, "Resetting paperfluidic conveyor belt", self.kit.stepper2)
             self.display.updatePercentage(5)
             time.sleep(2)
 
             self.display.updateQueue({"stage": "Fetching paperfluidics and moving the slide under the water dropper"})
-            self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper", self.kit2.stepper1, True)
+            self.moveConveyorToSensor(dropperIR, firstIR, "Fetching paperfluidics and moving the slide under the water dropper", self.kit.stepper2, True)
             self.display.updatePercentage(10)
             time.sleep(2)
 
@@ -405,7 +405,7 @@ class System:
             time.sleep(2)
 
             self.display.updateQueue({"stage": "Moving paperluidics under the camera"})
-            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the camera", self.kit2.stepper1)
+            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the camera", self.kit.stepper2)
             self.display.updatePercentage(30)
 
             try:
@@ -480,7 +480,7 @@ class System:
                 print("Phosphate characteristic not found")
 
             self.display.updateQueue({"stage": "Resetting the paperfludics conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit2.stepper1)
+            self.resetConveyorBelt(firstIR, "Bluetooth Uploaded. Resetting the paperfludics conveyor belt", self.kit.stepper2)
             self.display.updatePercentage(100)
 
             self.display.updateQueue({"stage": "Inorganics and Metal Detection Finished"})
@@ -488,7 +488,7 @@ class System:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -497,7 +497,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -506,7 +506,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -525,7 +525,7 @@ class System:
             microscopeIR = self.microscopeIR
             self.display.updatePercentage(5)
             self.display.updateQueue({"stage": "Resetting demo conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting demo conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(firstIR, "Resetting demo conveyor belt", self.kit.stepper2)
             self.display.updatePercentage(10)
             time.sleep(2)
 
@@ -535,42 +535,42 @@ class System:
             for i in range(numLoops):
                 print("Starting demo slide " + str(i + 1))
                 self.display.updateQueue({"stage": "Fetching demo slide and moving slide under dropper"})
-                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching demo slide and moving slide under dropper", self.kit.stepper1, True)
+                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching demo slide and moving slide under dropper", self.kit.stepper2, True)
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
-                self.dispensePlasticWater()
+                self.dispenseFluidicWater()
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
                 self.display.updateQueue({"stage": "Moving demo slide under microscope"})
-                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving demo slide under camera", self.kit.stepper1)
+                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving demo slide under camera", self.kit.stepper2)
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
 #                 self.capturePiImage()
                 time.sleep(2)
 
-            concentration = 1.2
-            mpChar = self.getCharacteristic("Microplastic")
+            concentration = 0.05
+            mpChar = self.getCharacteristic("Lead")
             if mpChar:
                 mpChar.WriteValue(str(concentration))
                 print("Updated value:" + str(concentration))
                 self.updateKey(key)
                 self.display.updatePercentage(80)
             else:
-                print("Microplastic characteristic not found")
+                print("Lead characteristic not found")
                 self.display.updatePercentage(75)
 
             self.display.updateQueue({"stage": "Bluetooth Uploaded.  Resetting conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper1)
+            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit.stepper2)
             self.display.updatePercentage(90)
         except Exception as e:
             self.display.updateQueue({"warning": f"Error: {e}"})
             print(f"Caught exception: {e}")
             try:
                 self.display.updateQueue({"stage": "Cancelling demo detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling demo detection and discarding any active trays", self.kit.stepper1)
+                self.resetConveyorBelt(firstIR, "Cancelling demo detection and discarding any active trays", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling demo detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling demo detection, after an error had already occured. FATAL ERROR: {ee}")

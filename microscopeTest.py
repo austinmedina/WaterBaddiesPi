@@ -1,6 +1,32 @@
 import cv2
 from datetime import datetime
+from adafruit_motorkit import MotorKit
+from adafruit_motor import stepper
+from breakpointSensor import IRSensor
+import time
+from gpiozero import LED
 
+def run_stepper(stepper_motor, cm=1, direction=stepper.BACKWARD, style=stepper.DOUBLE):
+    steps = cm
+    for i in range(steps):
+        stepper_motor.onestep(direction=direction, style=style)
+        time.sleep(0.01)
+        
+kit2 = MotorKit(address=0x61)
+microscopeIR = IRSensor(20)
+detected = microscopeIR.is_object_detected()
+
+plasticLED = LED(19)
+#         if (isSecondIR and not detected): #To ensure the slide makes is off the dispenser
+#             self.run_stepper(motor, 130)
+#         detected = targetIR.is_object_detected()
+while (not detected):
+    run_stepper(kit2.stepper2, 1)
+    detected = microscopeIR.is_object_detected()
+
+kit2.stepper2.release()
+
+plasticLED.on()
 # Initialize the camera
 cap = cv2.VideoCapture(8)  # 0 usually refers to the first USB camera
 
@@ -28,5 +54,6 @@ while True:
         break
 
 # When everything done, release the capture
+plasticLED.off()
 cap.release()
 cv2.destroyAllWindows()

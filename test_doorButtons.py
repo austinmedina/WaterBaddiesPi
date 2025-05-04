@@ -1,8 +1,8 @@
 from gpiozero import LED, Button
 import time
 
-button = Button(4)
-#button = Button(15)
+#button = Button(4)
+button = Button(15)
 #led1 = LED(8)
 led2 = LED(19)
 try:
