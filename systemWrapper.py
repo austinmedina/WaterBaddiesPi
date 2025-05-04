@@ -7,6 +7,7 @@ from gi.repository import GLib
 import threading
 from datetime import datetime
 import time
+import os
 
 from picamera2 import Picamera2
 from libcamera import controls
@@ -128,16 +129,16 @@ class System:
         self.kit2.stepper1.release()
         self.kit2.stepper2.release()
     
-    def run_stepper(self, stepper_motor, steps, direction=stepper.BACKWARD, style=stepper.DOUBLE):
-        for i in range(steps):
-            if (self.isPaperDoorClosed() and self.isPaperDoorClosed()):
-                stepper_motor.onestep(direction=direction, style=style)
-                time.sleep(0.01)
-            else:
+    def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
+        if (not self.isPaperDoorClosed() and not self.isPaperDoorClosed()):
+            closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
+            self.display.updateQueue({"warning":"CLOSE DOORS"})
+            while (not closed):
                 closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
-                self.display.updateQueue({"warning":"CLOSE DOORS"})
-                while (not closed):
-                    closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
+                    
+        for i in range(steps):
+            stepper_motor.onestep(direction=direction, style=style)
+                
 
     def resetConveyorBelt(self, ir, message, motor):
         print(message)
@@ -145,7 +146,6 @@ class System:
         while (not detected):
             self.run_stepper(motor, 15)
             detected = ir.is_object_detected()
-            print(detected)
         
         self.releaseMotors()
 
@@ -155,7 +155,7 @@ class System:
 #             self.run_stepper(motor, 130)
 #         detected = targetIR.is_object_detected()
         while (not detected):
-            self.run_stepper(motor, 20)
+            self.run_stepper(motor, 10)
             detected = targetIR.is_object_detected()
 #             startDetected = startIR.is_object_detected()
 #             if (startDetected):
@@ -167,9 +167,9 @@ class System:
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
         canMove = self.plasticMotorIR.is_object_detected()
-        for i in range(self.motorSteps):
+        for i in range(2):
             if (canMove):
-                self.run_stepper(self.kit2.stepper1, 1, stepper.FORWARD)
+                self.run_stepper(self.kit2.stepper1, 5, stepper.BACKWARD)
                 canMove = self.plasticMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
@@ -261,8 +261,8 @@ class System:
                 self.display.updatePercentage(int(new_pct))
                 time.sleep(2)
                 try:
-                    #imagePath = self.captureMicroscopeImage()
-                    #print(f"Microplastic image path: {imagePath}")
+                    imagePath = self.captureMicroscopeImage()
+                    print(f"Microplastic image path: {imagePath}")
                     loop_counter += 1
                     new_pct = 10 + round(loop_counter * percent_increase)
                     self.display.updatePercentage(int(new_pct))
@@ -307,7 +307,7 @@ class System:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
+                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -316,7 +316,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
+                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -325,7 +325,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(firstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
+                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -333,48 +333,35 @@ class System:
         finally:
             self.display.plasticActive = False
             self.releaseMotors()
-            
-    def capture_image_with_timeout(self, picam, path, timeout=20):
-        def _capture():
-            try:
-                picam.capture_file(path)
-            except Exception as e:
-                print("Capture error:", e)
-
-        thread = threading.Thread(target=_capture)
-        thread.start()
-        thread.join(timeout)
-        if thread.is_alive():
-            print("Capture timed out!")
-            return False
-        return True
+            self.display.startButtons()
+            print("Finished plastics")
 
     def capturePiImage(self):
-        time.sleep(1)
-        picam = Picamera2()
-        picam.configure(picam.create_still_configuration())
-        picam.start()
-        picam.set_controls({"AfMode": controls.AfModeEnum.Continuous})
-        path = f'paperFluidicImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
-        success = self.capture_image_with_timeout(picam, path, timeout=5)
-        picam.close()
-        if not success:
-            raise RuntimeError("Camera capture timed out")
+        os.makedirs("paperFluidicImages", exist_ok=True)
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_still_configuration())
+        picam2.start()
+        if not picam2.autofocus_cycle():
+            print("Warning: autofocus failed, capturing anyway")
+        filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.jpg")
+        path = os.path.join("paperFluidicImages", filename)
+        picam2.capture_file(path)
+        picam2.stop()
+        print(f"Saved image to {path}")
+        
         return path
-
         
     def dispenseFluidicWater(self):
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
         canMove = self.paperMotorIR.is_object_detected()
-        for i in range(self.motorSteps):
+        for i in range(2):
             if (canMove):
-                self.run_stepper(self.kit.stepper1, 1, stepper.FORWARD)
+                self.run_stepper(self.kit.stepper1, 5, stepper.BACKWARD)
                 canMove = self.paperMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
                 break
-#         self.run_stepper(self.kit2.stepper2, (30), stepper.BACKWARD)
         return
     
     def isInorganicsSyringeEmpty(self):
@@ -388,7 +375,7 @@ class System:
              
             self.display.updatePercentage(1)
             firstIR = self.firstIR
-            dropperIR = self.dropperIRs
+            dropperIR = self.dropperIR
             microscopeIR = self.microscopeIR
             self.display.updateQueue({"stage": "Resetting paperfluidic conveyor belt"})
             self.resetConveyorBelt(firstIR, "Resetting paperfluidic conveyor belt", self.kit.stepper2)
@@ -488,7 +475,7 @@ class System:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
+                self.resetConveyorBelt(self.firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -497,7 +484,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
+                self.resetConveyorBelt(self.firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -506,7 +493,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateQueue({"warning": "Canceling paperfluidics and resetting conveyor belt"})
-                self.resetConveyorBelt(firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
+                self.resetConveyorBelt(self.firstIR, "Canceling paperfluidics and resetting conveyor belt", self.kit.stepper2)
             except Exception as ee:
                 self.display.updateQueue({"warning": f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling paperfluidic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -516,6 +503,8 @@ class System:
             self.display.updatePercentage(100)
             self.display.paperActive = False
             self.releaseMotors()
+            self.display.startButtons()
+            print("Finished")
 
     def demoSystem(self, key):
         try:
@@ -548,7 +537,6 @@ class System:
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
-#                 self.capturePiImage()
                 time.sleep(2)
 
             concentration = 0.05
@@ -583,15 +571,15 @@ class System:
     
     def isPlasticDoorClosed(self):
         try:
-            button = Button(4)
-            return button.is_pressed
+            button = Button(15)
+            return not button.is_pressed
         except Exception as e:
             print(f"Error checking door status: {e}")
         
     def isPaperDoorClosed(self):
         try:
             button = Button(4)
-            return button.is_pressed
+            return not button.is_pressed
         except Exception as e:
             print(f"Error checking door status: {e}")
             return None

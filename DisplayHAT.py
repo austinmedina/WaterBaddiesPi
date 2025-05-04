@@ -69,8 +69,7 @@ class DisplayHat():
         self.percent = 0
         
         # Run the button listener in a separate thread
-        self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
-        self.button_thread.start()
+        self.startButtons()
 
         self.messageThread = threading.Thread(target=self.updateText, daemon=True)
         self.messageThread.start()
@@ -225,6 +224,7 @@ class DisplayHat():
         self.button_a_held = False
 
     def on_button_b_pressed(self):
+        print("Button B Pressed")
         if not self.button_b_held:
             if (not self.paperActive):
                 self.button_b_held = False
@@ -288,4 +288,8 @@ class DisplayHat():
 
     def destroy(self):
         Device.close()
+        
+    def startButtons(self):
+        self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
+        self.button_thread.start()
     
