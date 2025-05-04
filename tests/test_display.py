@@ -54,9 +54,19 @@ class DisplayHat():
         
         self.counter_thread = threading.Thread(target=self.counter, daemon=True)
         self.counter_thread.start()
-        # Run the button listener in a separate thread
-        self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
-        self.button_thread.start()
+#         # Run the button listener in a separate thread
+#         self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
+#         self.button_thread.start()
+
+        self.displayhatmini.button_a.when_released = self.on_button_a_pressed
+        self.displayhatmini.button_b.when_released = self.on_button_b_pressed
+        self.displayhatmini.button_x.when_released = self.on_button_x_pressed
+        self.displayhatmini.button_y.when_released = self.on_button_y_pressed
+        
+        self.displayhatmini.button_a.when_held = self.on_button_a_held
+        self.displayhatmini.button_b.when_held = self.on_button_b_held
+        self.displayhatmini.button_x.when_held = self.on_button_x_held
+        self.displayhatmini.button_y.when_held = self.on_button_y_held
 
         self.messageThread = threading.Thread(target=self.updateText, daemon=True)
         self.messageThread.start()
@@ -134,17 +144,17 @@ class DisplayHat():
         self.messageQueue.put(text)
 
     # Function to keep listening for button events
-    def button_listener(self):
-    # Assign the functions to button events
-        self.displayhatmini.button_a.when_released = self.on_button_a_pressed
-        self.displayhatmini.button_b.when_released = self.on_button_b_pressed
-        self.displayhatmini.button_x.when_released = self.on_button_x_pressed
-        self.displayhatmini.button_y.when_released = self.on_button_y_pressed
-        
-        self.displayhatmini.button_a.when_held = self.on_button_a_held
-        self.displayhatmini.button_b.when_held = self.on_button_b_held
-        self.displayhatmini.button_x.when_held = self.on_button_x_held
-        self.displayhatmini.button_y.when_held = self.on_button_y_held
+#     def button_listener(self):
+#     # Assign the functions to button events
+#         self.displayhatmini.button_a.when_released = self.on_button_a_pressed
+#         self.displayhatmini.button_b.when_released = self.on_button_b_pressed
+#         self.displayhatmini.button_x.when_released = self.on_button_x_pressed
+#         self.displayhatmini.button_y.when_released = self.on_button_y_pressed
+#         
+#         self.displayhatmini.button_a.when_held = self.on_button_a_held
+#         self.displayhatmini.button_b.when_held = self.on_button_b_held
+#         self.displayhatmini.button_x.when_held = self.on_button_x_held
+#         self.displayhatmini.button_y.when_held = self.on_button_y_held
 
     def destroy(self):
         Device.close()

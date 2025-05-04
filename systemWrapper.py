@@ -331,9 +331,8 @@ class System:
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
             return
         finally:
-            self.display.plasticActive = False
+            self.display.updatePlasticActive(False)
             self.releaseMotors()
-            self.display.startButtons()
             print("Finished plastics")
 
     def capturePiImage(self):
@@ -357,7 +356,7 @@ class System:
         canMove = self.paperMotorIR.is_object_detected()
         for i in range(1):
             if (canMove):
-                self.run_stepper(self.kit.stepper1, 25, stepper.BACKWARD)
+                self.run_stepper(self.kit.stepper1, 28, stepper.BACKWARD)
                 canMove = self.paperMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
@@ -501,10 +500,9 @@ class System:
         finally:
             self.display.updateQueue({"stage": "Paperfluidics Detection Finished"})
             self.display.updatePercentage(100)
-            self.display.paperActive = False
+            self.display.updatePaperActive(False)
             self.releaseMotors()
-            self.display.startButtons()
-            print("Finished")
+            print("Finished inorganics")
 
     def demoSystem(self, key):
         try:
@@ -597,6 +595,7 @@ class System:
         key = datetime.now().strftime("%F %T.%f")[:-3]
         mpThread = threading.Thread(target=self.microplasticDetection, args=(key,))
         mpThread.start()
+        print("detection started")
 
     def startInorganicsMetalDetection(self):
         self.display.updateQueue({"stage":"Initiating Inorganics Metal Detection"})
@@ -604,6 +603,7 @@ class System:
         key = datetime.now().strftime("%F %T.%f")[:-3]
         pfThread = threading.Thread(target=self.InorganicsMetalDetection, args=(key,))
         pfThread.start()
+        print("paper detection started")
 
     def startDetection(self):
         self.display.updateQueue({"stage":"Initiating All Detections in Parallel"})
