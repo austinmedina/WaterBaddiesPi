@@ -290,6 +290,11 @@ class DisplayHat():
         Device.close()
         
     def startButtons(self):
+        print("In buttons")
+        try:
+            self.button_thread.stop()
+        except:
+            pass
         self.button_thread = threading.Thread(target=self.button_listener, daemon=True)
         self.button_thread.start()
     

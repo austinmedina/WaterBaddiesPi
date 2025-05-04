@@ -167,9 +167,9 @@ class System:
         self.display.updateQueue({"stage":"Dispensing water"})
         print("Dispensing water")
         canMove = self.plasticMotorIR.is_object_detected()
-        for i in range(2):
+        for i in range(1):
             if (canMove):
-                self.run_stepper(self.kit2.stepper1, 5, stepper.BACKWARD)
+                self.run_stepper(self.kit2.stepper1, 4, stepper.BACKWARD)
                 canMove = self.plasticMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
@@ -355,9 +355,9 @@ class System:
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
         canMove = self.paperMotorIR.is_object_detected()
-        for i in range(2):
+        for i in range(1):
             if (canMove):
-                self.run_stepper(self.kit.stepper1, 5, stepper.BACKWARD)
+                self.run_stepper(self.kit.stepper1, 25, stepper.BACKWARD)
                 canMove = self.paperMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
