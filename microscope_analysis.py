@@ -1,5 +1,6 @@
 import numpy as np
 from skimage import io, color, filters, measure, morphology, draw
+import os
 
 # Conversion constant determined from testing to get the correct concentration
 # due to low amounts of microplastics in each image
@@ -13,7 +14,7 @@ def crop_image(image_path):
 
     # Get image dimensions
     height, width = image.shape[:2]
-    radius = min(width, height) // 2  # Make the circle fit within the image
+    radius = min(width, height) // 2.5  # Make the circle fit within the image
     center = (height // 2, width // 2)  # Center of the image
 
     # Create a blank mask and draw a filled circle
@@ -56,3 +57,20 @@ def microplastic_concentration(image_path):
     print(f'Approximate concentration: {concentration:.2f} particles/mL')
 
     return concentration
+
+def save_cropped_image(image_path: str, output_path: str = None) -> str:
+    image_path = os.path.normpath(image_path)
+    cropped, _ = crop_image(image_path)
+    if output_path is None:
+        base, ext = os.path.splitext(image_path)
+        output_path = f"{base}_cropped{ext}"
+    io.imsave(output_path, cropped)
+    return output_path
+
+if __name__ == "__main__":
+    # use a raw string or double backslashes on Windows
+    img = r"plasticImages\2025-05-04-21-34-56.790.png"
+    new_path = save_cropped_image(img)
+    print(f"Saved cropped image to {new_path}")
+
+
