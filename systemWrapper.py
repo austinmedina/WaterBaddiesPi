@@ -143,11 +143,11 @@ class System:
         self.kit2.stepper2.release()
     
     def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
-        if (not self.isPaperDoorClosed() and not self.isPlasticDoorClosed()):
-            closed = self.isPaperDoorClosed() and self.isPlasticDoorClosed()
+        if (self.areDoorsClosed):
+            closed = self.areDoorsClosed()
             self.display.updateQueue({"warning":"CLOSE DOORS"})
             while (not closed):
-                closed = self.isPaperDoorClosed() and self.isPlasticDoorClosed()
+                closed = self.areDoorsClosed()
                     
         for i in range(steps):
             stepper_motor.onestep(direction=direction, style=style)
@@ -588,18 +588,12 @@ class System:
             self.display.updatePercentage(100)
             self.display.demoActive = False
             self.releaseMotors()
-    
-    def isPlasticDoorClosed(self):
-        try:
-            button = Button(15)
-            return not button.is_pressed
-        except Exception as e:
-            print(f"Error checking door status: {e}")
         
-    def isPaperDoorClosed(self):
+    def areDoorsClosed(self):
         try:
-            button = Button(4)
-            return not button.is_pressed
+            paperButton = Button(4)
+            plasticButton = Button(15)
+            return not paperButton.is_pressed and not plasticButton.is_pressed
         except Exception as e:
             print(f"Error checking door status: {e}")
             return None
