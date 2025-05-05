@@ -644,9 +644,6 @@ class System:
         self.display.updateQueue({"stage":"All detections started. Waiting for results in background."})
         print("All detections started. Waiting for results in background.")
         
-        for thread in threads:
-            thread.join()
-        
 if __name__ == "__main__":
     wb = System()
     try:
