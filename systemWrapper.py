@@ -252,9 +252,9 @@ class System:
             time.sleep(2)
             sum = 0
             loop_counter = 0
-            percent_increase = 75 / (5 * 1) #(starting percentage - ending) / (Stages per loop * loops)
+            percent_increase = 75 / (5 * 5) #(starting percentage - ending) / (Stages per loop * loops)
 
-            for i in range(1):
+            for i in range(5):
                 print("Starting microplastic slide" + str(i+1))
                 self.display.updateQueue({"stage":"Fetching microplastic slide and moving slide under dropper"})
                 self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit2.stepper2, True, direction=stepper.BACKWARD)
@@ -298,7 +298,7 @@ class System:
                 
                 sum += quantity
 
-            concentration = sum
+            concentration = sum / 5
             
             mpChar = self.getCharacteristic("Microplastic")
             if (mpChar):
@@ -412,8 +412,8 @@ class System:
             self.display.updatePercentage(20)
             time.sleep(2)
 
-            self.display.updateQueue({"stage": "Moving paperluidics under the camera"})
-            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperluidics under the camera", self.kit.stepper2)
+            self.display.updateQueue({"stage": "Moving paperfluidics under the camera"})
+            self.moveConveyorToSensor(microscopeIR, firstIR, "Moving paperfluidics under the camera", self.kit.stepper2)
             self.display.updatePercentage(30)
 
             try:
