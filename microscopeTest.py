@@ -61,6 +61,7 @@ kit2.stepper2.release()
 # cv2.destroyAllWindows()
 
 plasticLED.on()
+time.sleep(2)
 cap = cv2.VideoCapture(8)
 if not cap.isOpened():
     print("Error opening video stream or file")
