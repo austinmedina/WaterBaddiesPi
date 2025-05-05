@@ -146,7 +146,7 @@ class System:
             stepper_motor.onestep(direction=direction, style=style)
                 
 
-    def resetConveyorBelt(self, ir, message, motor, direction=stepper.BACKWARD):
+    def resetConveyorBelt(self, ir, message, motor, direction=stepper.FORWARD):
         print(message)
         detected = ir.is_object_detected()
         while (not detected):
@@ -155,7 +155,7 @@ class System:
         
         self.releaseMotors()
 
-    def moveConveyorToSensor(self, targetIR, startIR, message, motor, isSecondIR=False, direction=stepper.BACKWARD):
+    def moveConveyorToSensor(self, targetIR, startIR, message, motor, isSecondIR=False, direction=stepper.FORWARD):
         detected = targetIR.is_object_detected()
 #         if (isSecondIR and not detected): #To ensure the slide makes is off the dispenser
 #             self.run_stepper(motor, 130)
