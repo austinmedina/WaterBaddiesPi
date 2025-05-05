@@ -287,10 +287,10 @@ class DisplayHat():
     def updatePaperActive(self, boo):
         self.paperActive = boo
 
-    def getQueue():
+    def getQueue(self):
         return self.messageQueue
 
-    def setQueue(queue):
+    def setQueue(self, queue):
         self.messageQueue = queue
 
     def destory(self):
