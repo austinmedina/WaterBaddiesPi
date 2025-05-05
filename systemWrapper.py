@@ -364,6 +364,7 @@ class System:
             if (canMove):
                 self.run_stepper(self.kit.stepper1, 1, stepper.BACKWARD)
                 canMove = self.paperMotorIR.is_object_detected()
+                time.sleep(0.5)
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
                 break
