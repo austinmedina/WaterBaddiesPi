@@ -123,6 +123,12 @@ class System:
         self.app.quit()
         self.startBluetooth()
         
+#     def restartDisplay(self):
+#         self.display.destroy()
+#         del self.display
+#         
+#         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
+#         
     def releaseMotors(self):
         self.kit.stepper1.release()
         self.kit.stepper2.release()
@@ -140,22 +146,22 @@ class System:
             stepper_motor.onestep(direction=direction, style=style)
                 
 
-    def resetConveyorBelt(self, ir, message, motor):
+    def resetConveyorBelt(self, ir, message, motor, direction=stepper.BACKWARD):
         print(message)
         detected = ir.is_object_detected()
         while (not detected):
-            self.run_stepper(motor, 15)
+            self.run_stepper(motor, 15, direction)
             detected = ir.is_object_detected()
         
         self.releaseMotors()
 
-    def moveConveyorToSensor(self, targetIR, startIR, message, motor, isSecondIR=False):
+    def moveConveyorToSensor(self, targetIR, startIR, message, motor, isSecondIR=False, direction=stepper.BACKWARD):
         detected = targetIR.is_object_detected()
 #         if (isSecondIR and not detected): #To ensure the slide makes is off the dispenser
 #             self.run_stepper(motor, 130)
 #         detected = targetIR.is_object_detected()
         while (not detected):
-            self.run_stepper(motor, 10)
+            self.run_stepper(motor, 10, direction)
             detected = targetIR.is_object_detected()
 #             startDetected = startIR.is_object_detected()
 #             if (startDetected):
@@ -169,7 +175,7 @@ class System:
         canMove = self.plasticMotorIR.is_object_detected()
         for i in range(1):
             if (canMove):
-                self.run_stepper(self.kit2.stepper1, 4, stepper.BACKWARD)
+                self.run_stepper(self.kit2.stepper1, 4, stepper.FORWARD)
                 canMove = self.plasticMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
@@ -234,17 +240,17 @@ class System:
             microscopeIR = self.PlasticMicroscopeIR
             self.display.updatePercentage(2)
             self.display.updateQueue({"stage":"Resetting microplastic conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit2.stepper2)
+            self.resetConveyorBelt(firstIR, "Resetting microplastic conveyor belt", self.kit2.stepper2, direction=stepper.BACKWARD)
             self.display.updatePercentage(10)
             time.sleep(2)
             sum = 0
             loop_counter = 0
-            percent_increase = 75 / (5 * 5) #(starting percentage - ending) / (Stages per loop * loops)
+            percent_increase = 75 / (5 * 1) #(starting percentage - ending) / (Stages per loop * loops)
 
-            for i in range(5):
+            for i in range(1):
                 print("Starting microplastic slide" + str(i+1))
                 self.display.updateQueue({"stage":"Fetching microplastic slide and moving slide under dropper"})
-                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit2.stepper2, True)
+                self.moveConveyorToSensor(dropperIR, firstIR, "Fetching microplastic slide and moving slide under dropper", self.kit2.stepper2, True, direction=stepper.BACKWARD)
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
@@ -255,7 +261,7 @@ class System:
                 self.display.updatePercentage(int(new_pct))
                 time.sleep(2)
                 self.display.updateQueue({"stage":"Moving microplastic slide under microscope"})
-                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit2.stepper2)
+                self.moveConveyorToSensor(microscopeIR, firstIR, "Moving microplastic slide under microscope", self.kit2.stepper2, direction=stepper.BACKWARD)
                 loop_counter += 1
                 new_pct = 10 + round(loop_counter * percent_increase)
                 self.display.updatePercentage(int(new_pct))
@@ -298,7 +304,7 @@ class System:
                 print("Microplastic characteristic not found")
 
             self.display.updateQueue({"stage": "Bluetooth Uploaded.  Resetting conveyor belt"})
-            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit2.stepper2)
+            self.resetConveyorBelt(firstIR, "Resetting conveyor belt", self.kit2.stepper2, direction=stepper.BACKWARD)
             self.display.updatePercentage(100)
             
             self.display.updateQueue({"stage": "Microplastic Detection Finished"})
@@ -307,7 +313,7 @@ class System:
             print(f"Caught exception: {e}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
+                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2, direction=stepper.BACKWARD)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -316,7 +322,7 @@ class System:
             print(f"Caught image capture exception: {ie}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
+                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2, direction=stepper.BACKWARD)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -325,7 +331,7 @@ class System:
             print(f"Caught image analysis exception: {ia}")
             try:
                 self.display.updateQueue({"stage":"Cancelling microplastic detection and discarding any active trays"})
-                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2)
+                self.resetConveyorBelt(self.PlasticFirstIR, "Cancelling microplastic detection and discarding any active trays", self.kit2.stepper2, direction=stepper.BACKWARD)
             except Exception as ee:
                 self.display.updateQueue({"warning":f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}"})
                 print(f"Fatal error while canceling microplastic detection, after an error had already occured. FATAL ERROR: {ee}")
@@ -470,6 +476,7 @@ class System:
             self.display.updatePercentage(100)
 
             self.display.updateQueue({"stage": "Inorganics and Metal Detection Finished"})
+            time.sleep(1)
         except Exception as e:
             print(f"Caught exception: {e}")
             try:
@@ -503,6 +510,7 @@ class System:
             self.display.updatePaperActive(False)
             self.releaseMotors()
             print("Finished inorganics")
+#             self.restartDisplay()
 
     def demoSystem(self, key):
         try:

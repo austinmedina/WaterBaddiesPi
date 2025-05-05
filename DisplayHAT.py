@@ -287,6 +287,12 @@ class DisplayHat():
     def updatePaperActive(self, boo):
         self.paperActive = boo
 
-    def destroy(self):
-        Device.close()
-    
+#     def destroy(self):
+#         print("In destroy")
+#         try:
+#             self.messageThread.stop()
+#             self.displayhatmini.close()
+#         except Exception:
+#             pass
+#         # drop the reference so Python can GC it
+#         del self.displayhatmini
