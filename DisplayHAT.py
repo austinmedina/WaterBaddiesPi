@@ -54,6 +54,7 @@ class DisplayHat():
         self.button_x_held = False
         self.button_y_held = False
 
+        self._running = True
         self.plasticActive = False
         self.paperActive = False
         self.demoActive = False
@@ -185,19 +186,17 @@ class DisplayHat():
 
 
     def updateText(self):
-        while True:
+        while self._running:
             try:
                 texts = self.messageQueue.get(block=False)
-                if ("stage" in texts):
-                    self.stage = texts["stage"]
-                if ("warning" in texts):
-                    self.warning = texts["warning"]
+                if "stage" in texts:    self.stage   = texts["stage"]
+                if "warning" in texts:  self.warning = texts["warning"]
             except:
                 pass
             finally:
                 self.counterStep += 1
                 self.update_display()
-                time.sleep(2)
+                time.sleep(1)
 
     def updateQueue(self, text):
         self.messageQueue.put(text)
@@ -287,12 +286,27 @@ class DisplayHat():
     def updatePaperActive(self, boo):
         self.paperActive = boo
 
-#     def destroy(self):
-#         print("In destroy")
-#         try:
-#             self.messageThread.stop()
-#             self.displayhatmini.close()
-#         except Exception:
-#             pass
-#         # drop the reference so Python can GC it
-#         del self.displayhatmini
+    def destory(self):
+        # stop updateText loop
+        self._running = False
+        if self.messageThread.is_alive():
+            self.messageThread.join(timeout=1)
+
+        # unbind & close only the HAT’s buttons
+        for btn in (
+            self.displayhatmini.button_a,
+            self.displayhatmini.button_b,
+            self.displayhatmini.button_x,
+            self.displayhatmini.button_y
+        ):
+            btn.when_released = btn.when_held = None
+            btn.close()
+
+        # close the HAT’s display/I2C interface
+        try:
+            self.displayhatmini.close()
+        except:
+            pass
+
+        # drop reference so Python can GC it
+        del self.displayhatmini

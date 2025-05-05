@@ -123,12 +123,19 @@ class System:
         self.app.quit()
         self.startBluetooth()
         
-#     def restartDisplay(self):
-#         self.display.destroy()
-#         del self.display
-#         
-#         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
-#         
+    def resetDisplay(self):
+        try:
+            self.display.destory()
+        except Exception:
+            pass
+        self.display = DisplayHat(
+            self.startMicroplasticDetection,
+            self.startInorganicsMetalDetection,
+            self.startDetection,
+            self.restartBluetooth,
+            self.startDemo
+        )
+        
     def releaseMotors(self):
         self.kit.stepper1.release()
         self.kit.stepper2.release()
