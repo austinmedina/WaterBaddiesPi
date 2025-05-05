@@ -597,13 +597,15 @@ class System:
             self.resetDisplay()
         
     def areDoorsClosed(self):
-        try:
-            paperButton = self.paperButton
-            plasticButton = self.plasticButton
-            return (not paperButton.is_pressed) and (not plasticButton.is_pressed)
-        except Exception as e:
-            print(f"Error checking door status: {e}")
-            return None
+        # try:
+        #     paperButton = self.paperButton
+        #     plasticButton = self.plasticButton
+        #     return (not paperButton.is_pressed) and (not plasticButton.is_pressed)
+        # except Exception as e:
+        #     print(f"Error checking door status: {e}")
+        #     return None
+
+        return True
         
     def startDemo(self):
         self.display.updateQueue({"stage":"Initiating Demo Detection"})
