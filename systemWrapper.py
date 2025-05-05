@@ -347,6 +347,7 @@ class System:
             self.display.updatePlasticActive(False)
             self.releaseMotors()
             print("Finished plastics")
+            self.resetDisplay()
 
     def capturePiImage(self):
         os.makedirs("paperFluidicImages", exist_ok=True)
@@ -588,6 +589,7 @@ class System:
             self.display.updatePercentage(100)
             self.display.demoActive = False
             self.releaseMotors()
+            self.resetDisplay()
         
     def areDoorsClosed(self):
         try:

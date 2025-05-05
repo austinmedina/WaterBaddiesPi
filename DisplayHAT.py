@@ -138,7 +138,7 @@ class DisplayHat():
         # Middle Left: Stage Info with wrapped text
         stage_bg = getattr(self, 'mode_stage_bg', self.mode_background)
         self.draw.rectangle((0, middle_top, mid_width, middle_bottom), fill=stage_bg)
-        stage_info = f"Stage: {self.stage}" if self.stage else "Stage: Not Started"
+        stage_info = f"Stage: {self.stage}" if self.stage else "Stage: Ready"
         max_text_width = mid_width - (2 * margin)
         stage_lines = wrap_text(stage_info, self.font, max_text_width, self.draw)
         y_offset = middle_top + margin
