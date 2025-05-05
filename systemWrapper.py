@@ -405,13 +405,11 @@ class System:
                 self.display.updateQueue({"stage": "Waiting for reactions"})
                 self.display.updatePercentage(32.5)
                 print("Waiting for reactions")
-                time.sleep(3) #Will be 120 seconds
+                time.sleep(60) #Will be 120 seconds
                 leadImagePath = self.capturePiImage() #Capture image of peperfluidics
                 self.display.updatePercentage(37.5)
                 print(f"Lead paperfluidics image: {leadImagePath}")
 
-                # Just for testing
-                testImagePath = "./test_images/paperfluidic_test.jpg"
             except Exception as e:
                 self.display.updateQueue({"warning": f"Error during image capture: {e}"})
                 print(f"Error during image capture: {e}")
@@ -420,7 +418,7 @@ class System:
             try:
                 self.display.updateQueue({"stage": "Starting Lead Concentration Analysis"})
                 print("Starting Concentration Analysis")
-                concentration = pfa.paperfluidic_concentration(testImagePath)
+                concentration = pfa.paperfluidic_concentration(leadImagePath)
                 self.display.updatePercentage(45)
             except Exception as e:
                 self.display.updateQueue({"warning": f"Error during image analysis: {e}"})
