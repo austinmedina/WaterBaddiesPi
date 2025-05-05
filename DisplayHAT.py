@@ -263,6 +263,7 @@ class DisplayHat():
 
     def on_button_a_held(self):
         print("Button A hold")
+        self.updateQueue({'warning': 'DESIGNED BY AUSTIN M, ALIA N, AIDAN T, DANNY K, JAMESON B, BRENDAN B, TYLER T'})
         self.button_a_held = True
 
     def on_button_b_held(self):
@@ -273,7 +274,7 @@ class DisplayHat():
     def on_button_x_held(self):
         print("Button X hold")
         self.button_x_held = True
-        #os.system("sudo shutdown -h now")
+        os.system("sudo shutdown -h now")
 
     def on_button_y_held(self):
         print("Button Y hold")
