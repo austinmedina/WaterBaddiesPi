@@ -1,13 +1,6 @@
 import cv2
 import numpy as np
-from skimage import io, color
-
-
-def load_and_preprocess_image(image_path):
-    image = crop_image(image_path)
-    # Convert to Lab color space for better color comparison
-    lab_image = color.rgb2lab(image)
-    return lab_image
+from skimage import io
 
 
 def crop_image(image_path):
@@ -28,21 +21,20 @@ def crop_image(image_path):
 
     # Get the bounding box of the largest contour
     x, y, w, h = cv2.boundingRect(largest_contour)
-    w = 1630
+    w = 2300
 
     cropped_image = image[y:y + h, x:x + w]
     return cropped_image
 
 
-def paperfluidic_concentration(input_image_path,
-                               region_radius=5):
+def paperfluidic_concentration(input_image_path, region_radius=100):
     color_changes = {"Cadmium": 0, "Lead": 0, "Nitrate": 0,
                      "Nitrite": 0, "Phosphate": 0}
     key_list = list(color_changes.keys())
-    reservoir_coords = [(350, 450), (1020, 250),
-                        (1410, 800), (1010, 1370), (340, 1170)]
+    reservoir_coords = [(1400, 1960), (1950, 1110),
+                        (440, 660), (460, 1640), (1380, 340)]
 
-    input_image = load_and_preprocess_image(input_image_path)
+    input_image = crop_image(input_image_path)
 
     for i, (x, y) in enumerate(reservoir_coords):
         # Extract small regions around the reservoir in both images
@@ -64,7 +56,7 @@ def paperfluidic_concentration(input_image_path,
             concentration = nitrate_concentration(color_value)
         elif i == 3:
             concentration = nitrite_concentration(color_value)
-        elif i == 4:
+        else:
             concentration = phosphate_concentration(color_value)
 
         color_changes[key_list[i]] = concentration

@@ -1,6 +1,11 @@
-import math
 import numpy as np
 from skimage import io, color, filters, measure, morphology, draw
+
+# Conversion constant determined from testing to get the correct concentration
+# due to low amounts of microplastics in each image
+# Not using a constant like this would result in a much larger concentration
+# than is actually present
+conversion_constant = 1/7.34
 
 
 def crop_image(image_path):
@@ -38,22 +43,14 @@ def microplastic_concentration(image_path):
     # Count microplastic particles
     num_particles = len(regions)
 
-    # Known field of view (in mm²)
-    # Adjust based on microscope calibration
-    obj_size = 1  # in mm
-    obj_pixels = 69
-    scale_factor = obj_size / obj_pixels
-
-    # Known field of view (in mm²)
-    field_of_view_area = math.pi * (radius * scale_factor) ** 2
-    depth = 1  # in mm
-    volume = field_of_view_area * depth / 1000
+    # Volume of each sample (in millimeters)
+    volume = 0.075
 
     # Prevent falsely counting low-signal for particles
     if num_particles >= 10:
         num_particles = 0
 
-    concentration = num_particles / volume
+    concentration = conversion_constant * num_particles / volume
 
     print(f'Particles counted: {num_particles} particles')
     print(f'Approximate concentration: {concentration:.2f} particles/mL')
