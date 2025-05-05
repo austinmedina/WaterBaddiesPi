@@ -143,11 +143,11 @@ class System:
         self.kit2.stepper2.release()
     
     def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
-        if (not self.isPaperDoorClosed() and not self.isPaperDoorClosed()):
-            closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
+        if (not self.isPaperDoorClosed() and not self.isPlasticDoorClosed()):
+            closed = self.isPaperDoorClosed() and self.isPlasticDoorClosed()
             self.display.updateQueue({"warning":"CLOSE DOORS"})
             while (not closed):
-                closed = self.isPaperDoorClosed() and self.isPaperDoorClosed()
+                closed = self.isPaperDoorClosed() and self.isPlasticDoorClosed()
                     
         for i in range(steps):
             stepper_motor.onestep(direction=direction, style=style)
