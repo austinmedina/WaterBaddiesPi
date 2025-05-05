@@ -420,7 +420,7 @@ class System:
                 self.display.updateQueue({"stage": "Waiting for reactions"})
                 self.display.updatePercentage(32.5)
                 print("Waiting for reactions")
-                time.sleep(60) #Will be 120 seconds
+                # time.sleep(60) #Will be 120 seconds
                 leadImagePath = self.capturePiImage() #Capture image of peperfluidics
                 self.display.updatePercentage(37.5)
                 print(f"Lead paperfluidics image: {leadImagePath}")
