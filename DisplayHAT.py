@@ -287,6 +287,12 @@ class DisplayHat():
     def updatePaperActive(self, boo):
         self.paperActive = boo
 
+    def getQueue():
+        return self.messageQueue
+
+    def setQueue(queue):
+        self.messageQueue = queue
+
     def destory(self):
         # stop updateText loop
         self._running = False

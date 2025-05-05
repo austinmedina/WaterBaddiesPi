@@ -127,10 +127,13 @@ class System:
         self.startBluetooth()
         
     def resetDisplay(self):
+        queue = self.display.getQueue()
+
         try:
             self.display.destory()
         except Exception:
             pass
+
         self.display = DisplayHat(
             self.startMicroplasticDetection,
             self.startInorganicsMetalDetection,
@@ -138,6 +141,8 @@ class System:
             self.restartBluetooth,
             self.startDemo
         )
+
+        self.display.setQueue(queue)
 
     def releaseMotors(self):
         self.kit.stepper1.release()
