@@ -192,9 +192,6 @@ class System:
                 break
         return
     
-#         self.run_stepper(self.kit.stepper2, (30), stepper.BACKWARD)
-#         return
-    
     def captureMicroscopeImage(self):
         self.plasticLED.on()
         cap = cv2.VideoCapture(8)
