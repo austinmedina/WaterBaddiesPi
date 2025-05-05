@@ -600,7 +600,7 @@ class System:
         try:
             paperButton = self.paperButton
             plasticButton = self.plasticButton
-            return paperButton.is_pressed and plasticButton.is_pressed
+            return (not paperButton.is_pressed) and (not plasticButton.is_pressed)
         except Exception as e:
             print(f"Error checking door status: {e}")
             return None
