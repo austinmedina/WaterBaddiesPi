@@ -135,7 +135,7 @@ class System:
             self.restartBluetooth,
             self.startDemo
         )
-        
+
     def releaseMotors(self):
         self.kit.stepper1.release()
         self.kit.stepper2.release()
@@ -516,7 +516,7 @@ class System:
             self.display.updatePaperActive(False)
             self.releaseMotors()
             print("Finished inorganics")
-#             self.restartDisplay()
+            self.resetDisplay()
 
     def demoSystem(self, key):
         try:
