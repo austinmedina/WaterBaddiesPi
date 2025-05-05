@@ -146,7 +146,7 @@ class System:
         self.kit2.stepper2.release()
     
     def run_stepper(self, stepper_motor, steps, direction=stepper.FORWARD, style=stepper.DOUBLE):
-        if (self.areDoorsClosed):
+        if (self.areDoorsClosed()):
             closed = self.areDoorsClosed()
             self.display.updateQueue({"warning":"CLOSE DOORS"})
             while (not closed):
