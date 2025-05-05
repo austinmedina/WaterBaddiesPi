@@ -351,16 +351,24 @@ class System:
     def capturePiImage(self):
         os.makedirs("paperFluidicImages", exist_ok=True)
         picam2 = Picamera2()
-        picam2.configure(picam2.create_still_configuration())
+
+        # 1) autofocus pass using preview config
+        picam2.configure(picam2.create_preview_configuration())
         picam2.start()
         if not picam2.autofocus_cycle():
             print("Warning: autofocus failed, capturing anyway")
+        picam2.stop()
+
+        # 2) still‐capture pass
+        picam2.configure(picam2.create_still_configuration())
+        picam2.start()
         filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.jpg")
         path = os.path.join("paperFluidicImages", filename)
         picam2.capture_file(path)
         picam2.stop()
+        picam2.close()
+
         print(f"Saved image to {path}")
-        
         return path
         
     def dispenseFluidicWater(self):
