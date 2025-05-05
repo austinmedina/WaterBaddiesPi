@@ -360,9 +360,9 @@ class System:
         self.display.updateQueue({"stage":"Dispensing Paperfluidics water"})
         print("Dispensing Paperfluidicswater")
         canMove = self.paperMotorIR.is_object_detected()
-        for i in range(1):
+        for i in range(28):
             if (canMove):
-                self.run_stepper(self.kit.stepper1, 28, stepper.BACKWARD)
+                self.run_stepper(self.kit.stepper1, 1, stepper.BACKWARD)
                 canMove = self.paperMotorIR.is_object_detected()
             else:
                 self.display.updateQueue({"warning":"Syringes were not full enough to dispense the required amount of water"})
