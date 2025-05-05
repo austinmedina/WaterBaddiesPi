@@ -26,34 +26,52 @@ while (not detected):
 
 kit2.stepper2.release()
 
-plasticLED.on()
-# Initialize the camera
-cap = cv2.VideoCapture(8)  # 0 usually refers to the first USB camera
+# plasticLED.on()
+# # Initialize the camera
+# cap = cv2.VideoCapture(8)  # 0 usually refers to the first USB camera
 
-# Check if the camera is opened successfully
+# # Check if the camera is opened successfully
+# if not cap.isOpened():
+#     print("Error opening video stream or file")
+
+# while True:
+#     # Capture frame-by-frame
+#     ret, frame = cap.read()
+
+#     # If frame is read correctly, ret is True
+#     if not ret:
+#         print("Can't receive frame (stream end?). Exiting ...")
+#         break
+
+#     # Display the resulting frame
+#     cv2.imshow('frame', frame)
+    
+#     #save the image
+#     #cv2.imwrite(f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png', frame)
+
+#     # Press 'q' to exit
+#     if cv2.waitKey(1) == ord('q'):
+#         break
+
+#     time.sleep(1)
+
+# # When everything done, release the capture
+# plasticLED.off()
+# cap.release()
+# cv2.destroyAllWindows()
+
+plasticLED.on()
+cap = cv2.VideoCapture(8)
 if not cap.isOpened():
     print("Error opening video stream or file")
+    raise Exception("Couldnt open microscope stream")
 
-while True:
-    # Capture frame-by-frame
-    ret, frame = cap.read()
+ret, frame = cap.read()
 
-    # If frame is read correctly, ret is True
-    if not ret:
-        print("Can't receive frame (stream end?). Exiting ...")
-        break
+if not ret:
+    print("Can't receive frame (stream end?). Exiting ...")
+    raise Exception("Couldnt open microscope picture frame")
 
-    # Display the resulting frame
-    cv2.imshow('frame', frame)
-    
-    #save the image
-    #cv2.imwrite(f'plasticImages/{datetime.now().strftime("%F %T.%f")[:-3]}.png', frame)
-
-    # Press 'q' to exit
-    if cv2.waitKey(1) == ord('q'):
-        break
-
-# When everything done, release the capture
-plasticLED.off()
-cap.release()
-cv2.destroyAllWindows()
+path = f'plasticImages/{datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")[:-3]}.png'
+cv2.imwrite(path, frame)
+plasticLED.off() 
