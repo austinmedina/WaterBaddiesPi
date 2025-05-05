@@ -82,6 +82,9 @@ class System:
         self.plasticLED = LED(19)
         
         self.motorSteps = 30
+
+        self.paperButton = Button(4)
+        self.plasticButton = Button(15)
         
         self.startBluetooth()
         self.display = DisplayHat(self.startMicroplasticDetection, self.startInorganicsMetalDetection, self.startDetection, self.restartBluetooth, self.startDemo)
@@ -591,8 +594,8 @@ class System:
         
     def areDoorsClosed(self):
         try:
-            paperButton = Button(4)
-            plasticButton = Button(15)
+            paperButton = self.paperButton
+            plasticButton = self.plasticButton
             return not paperButton.is_pressed and not plasticButton.is_pressed
         except Exception as e:
             print(f"Error checking door status: {e}")
